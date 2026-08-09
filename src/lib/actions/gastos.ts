@@ -37,6 +37,14 @@ export async function registrarGasto(input: {
     if (!categoria) return { ok: false, error: 'Categoría de gasto no válida' }
 
     const gasto = await prisma.$transaction(async (tx) => {
+      // Lock de caja y re-chequeo: evita asociar el gasto a una caja recién cerrada
+      const rows = await tx.$queryRaw<{ id: number; estado: string }[]>`
+        SELECT id, estado FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
+      `
+      if (!rows || rows.length === 0 || rows[0].estado !== 'abierta') {
+        throw new Error('La caja se cerró, no se puede registrar el gasto')
+      }
+
       const creado = await tx.gasto.create({
         data: {
           cajaId: caja.id,
@@ -101,6 +109,13 @@ export async function solicitarAnulacionGasto(gastoId: number): Promise<Anulacio
       usuario.rol === 'Administrador' ? 'anular_gasto' : 'solicitar_anulacion_gasto'
 
     await prisma.$transaction(async (tx) => {
+      const rowsCaja = await tx.$queryRaw<{ id: number; estado: string }[]>`
+        SELECT id, estado FROM "cajas" WHERE id = ${gasto.caja.id} FOR UPDATE
+      `
+      if (!rowsCaja || rowsCaja.length === 0 || rowsCaja[0].estado !== 'abierta') {
+        throw new Error('La caja se cerró, no se puede anular el gasto')
+      }
+
       const actualizado = await tx.gasto.update({
         where: { id: gasto.id },
         data: { estado: estadoDestino },

@@ -62,11 +62,14 @@ export async function registrarVenta(input: {
     const resultado = await prisma.$transaction(
       async (tx) => {
         // Lock de fila sobre la caja para serializar la generación del correlativo
-        const rows = await tx.$queryRaw<{ id: number }[]>`
-          SELECT id FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
+        const rows = await tx.$queryRaw<{ id: number; estado: string }[]>`
+          SELECT id, estado FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
         `
         if (!rows || rows.length === 0) {
           throw new Error('La caja ya no está disponible')
+        }
+        if (rows[0].estado !== 'abierta') {
+          throw new Error('La caja ya fue cerrada, no se puede registrar la venta')
         }
 
         const ultima = await tx.venta.findFirst({
@@ -163,6 +166,14 @@ export async function cambiarEstadoVenta(
     }
 
     await prisma.$transaction(async (tx) => {
+      // Lock de caja y re-chequeo: evita avanzar el estado tras un cierre concurrente
+      const rows = await tx.$queryRaw<{ id: number; estado: string }[]>`
+        SELECT id, estado FROM "cajas" WHERE id = ${venta.caja.id} FOR UPDATE
+      `
+      if (!rows || rows.length === 0 || rows[0].estado !== 'abierta') {
+        throw new Error('La caja se cerró, no se puede modificar la venta')
+      }
+
       const actualizada = await tx.venta.update({
         where: { id: venta.id },
         data: { estadoVehiculo: datos.estado },

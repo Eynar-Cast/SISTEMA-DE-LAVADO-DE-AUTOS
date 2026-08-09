@@ -111,6 +111,7 @@ export async function listarGastos(
       usuario: { select: { nombre: true } },
     },
     orderBy: { fecha: 'desc' },
+    take: 500,
   })
 
   return gastos.map((g) => ({ ...g, monto: g.monto.toNumber() }))

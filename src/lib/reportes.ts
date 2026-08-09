@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 function inicioDeDia(fecha: Date): Date {
   const d = new Date(fecha)
@@ -12,39 +13,37 @@ function finDeDia(fecha: Date): Date {
   return d
 }
 
-type DetalleFiltro = {
-  venta: { fecha: { gte: Date; lte: Date } }
+export function fechaDesdeISO(iso: string | undefined): Date | null {
+  if (!iso) return null
+  const [y, m, d] = iso.split('-').map(Number)
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
+  return new Date(y, m - 1, d)
 }
 
 async function agregarRanking(
-  where: DetalleFiltro,
+  desde: Date,
+  hasta: Date,
   limite: number | null
 ): Promise<{ nombre: string; cantidad: number; total: number }[]> {
-  const detalles = await prisma.detalleVenta.findMany({
-    where,
-    select: { servicioId: true, cantidad: true, precioAplicado: true },
-  })
-
-  const acumulado = new Map<number, { cantidad: number; total: number }>()
-  for (const d of detalles) {
-    const actual = acumulado.get(d.servicioId) ?? { cantidad: 0, total: 0 }
-    actual.cantidad += d.cantidad
-    actual.total += d.precioAplicado.toNumber() * d.cantidad
-    acumulado.set(d.servicioId, actual)
-  }
-
-  const servicios = await prisma.servicio.findMany()
-  const nombrePorId = new Map(servicios.map((s) => [s.id, s.nombre]))
-
-  const ordenado = Array.from(acumulado.entries())
-    .map(([servicioId, { cantidad, total }]) => ({
-      nombre: nombrePorId.get(servicioId) ?? `Servicio #${servicioId}`,
-      cantidad,
-      total,
-    }))
-    .sort((a, b) => b.cantidad - a.cantidad)
-
-  return limite ? ordenado.slice(0, limite) : ordenado
+  const filas = await prisma.$queryRaw<
+    { nombre: string; cantidad: number; total: Prisma.Decimal }[]
+  >`
+    SELECT s.nombre AS nombre,
+           SUM(dv.cantidad)::int AS cantidad,
+           SUM(dv.cantidad * dv.precio_aplicado)::numeric AS total
+    FROM "detalle_ventas" dv
+    JOIN "ventas" v ON v.id = dv.venta_id
+    JOIN "servicios" s ON s.id = dv.servicio_id
+    WHERE v.fecha >= ${desde} AND v.fecha <= ${hasta}
+    GROUP BY s.nombre
+    ORDER BY cantidad DESC, total DESC
+    LIMIT ${limite}
+  `
+  return filas.map((f) => ({
+    nombre: f.nombre,
+    cantidad: Number(f.cantidad),
+    total: f.total.toNumber(),
+  }))
 }
 
 export type ResumenDashboard = {
@@ -60,28 +59,23 @@ export async function obtenerResumenDashboard(): Promise<ResumenDashboard> {
   const hoyDesde = inicioDeDia(new Date())
   const hoyHasta = finDeDia(new Date())
 
-  const [vehiculosHoy, ingresos, gastos, cajasAbiertas, topServicios] =
-    await Promise.all([
-      prisma.venta.count({
-        where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
-      }),
-      prisma.venta.aggregate({
-        where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
-        _sum: { total: true },
-      }),
-      prisma.gasto.aggregate({
-        where: { fecha: { gte: hoyDesde, lte: hoyHasta }, estado: 'activo' },
-        _sum: { monto: true },
-      }),
-      prisma.caja.count({ where: { estado: 'abierta' } }),
-      agregarRanking(
-        { venta: { fecha: { gte: hoyDesde, lte: hoyHasta } } },
-        5
-      ),
-    ])
+  const [ventasHoy, gastos, cajasAbiertas, topServicios] = await Promise.all([
+    prisma.venta.aggregate({
+      where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
+      _count: true,
+      _sum: { total: true },
+    }),
+    prisma.gasto.aggregate({
+      where: { fecha: { gte: hoyDesde, lte: hoyHasta }, estado: 'activo' },
+      _sum: { monto: true },
+    }),
+    prisma.caja.count({ where: { estado: 'abierta' } }),
+    agregarRanking(hoyDesde, hoyHasta, 5),
+  ])
 
-  const ingresosHoy = ingresos._sum.total?.toNumber() ?? 0
+  const ingresosHoy = ventasHoy._sum.total?.toNumber() ?? 0
   const gastosHoy = gastos._sum.monto?.toNumber() ?? 0
+  const vehiculosHoy = ventasHoy._count
 
   return {
     vehiculosHoy,
@@ -110,17 +104,23 @@ export async function obtenerReporteRango(
   const desde = inicioDeDia(fechaDesde)
   const hasta = finDeDia(fechaHasta)
 
-  const [ventas, gastos, ranking, porMetodo] = await Promise.all([
-    prisma.venta.findMany({
-      where: { fecha: { gte: desde, lte: hasta } },
-      select: { fecha: true, total: true },
-      orderBy: { fecha: 'asc' },
-    }),
+  const [porDia, gastos, ranking, porMetodo] = await Promise.all([
+    prisma.$queryRaw<
+      { dia: string; cantidad: number; total: Prisma.Decimal }[]
+    >`
+      SELECT to_char(DATE_TRUNC('day', (v.fecha AT TIME ZONE 'America/La_Paz')), 'YYYY-MM-DD') AS dia,
+             COUNT(*)::int AS cantidad,
+             SUM(v.total)::numeric AS total
+      FROM "ventas" v
+      WHERE v.fecha >= ${desde} AND v.fecha <= ${hasta}
+      GROUP BY dia
+      ORDER BY dia ASC
+    `,
     prisma.gasto.aggregate({
       where: { fecha: { gte: desde, lte: hasta }, estado: 'activo' },
       _sum: { monto: true },
     }),
-    agregarRanking({ venta: { fecha: { gte: desde, lte: hasta } } }, null),
+    agregarRanking(desde, hasta, null),
     prisma.venta.groupBy({
       by: ['metodoPago'],
       where: { fecha: { gte: desde, lte: hasta } },
@@ -129,25 +129,17 @@ export async function obtenerReporteRango(
     }),
   ])
 
-  const ingresos = ventas.reduce((acc, v) => acc + v.total.toNumber(), 0)
+  const vehiculos = porDia.reduce((acc, d) => acc + Number(d.cantidad), 0)
+  const ingresos = porDia.reduce((acc, d) => acc + d.total.toNumber(), 0)
   const egresos = gastos._sum.monto?.toNumber() ?? 0
 
-  const agrupado = new Map<string, { cantidad: number; total: number }>()
-  for (const v of ventas) {
-    const key = inicioDeDia(v.fecha).toISOString()
-    const actual = agrupado.get(key) ?? { cantidad: 0, total: 0 }
-    actual.cantidad += 1
-    actual.total += v.total.toNumber()
-    agrupado.set(key, actual)
-  }
-
   return {
-    rango: Array.from(agrupado.entries()).map(([iso, { cantidad, total }]) => ({
-      fecha: new Date(iso),
-      cantidad,
-      total,
+    rango: porDia.map((d) => ({
+      fecha: new Date(`${d.dia}T00:00:00`),
+      cantidad: Number(d.cantidad),
+      total: d.total.toNumber(),
     })),
-    vehiculos: ventas.length,
+    vehiculos,
     ingresos,
     egresos,
     utilidad: ingresos - egresos,

@@ -60,7 +60,7 @@ model Caja {
   ventas  Venta[]
   gastos  Gasto[]
 
-  @@index([usuarioId])
+  @@index([usuarioId, estado])
   @@map("cajas")
 }
 
@@ -80,6 +80,7 @@ model Venta {
   detalleVentas DetalleVenta[]
 
   @@index([cajaId])
+  @@index([cajaId, numeroCorrelativo])
   @@index([fecha])
   @@map("ventas")
 }
@@ -123,6 +124,7 @@ model Gasto {
 
   @@index([cajaId])
   @@index([fecha])
+  @@index([estado, fecha])
   @@map("gastos")
 }
 

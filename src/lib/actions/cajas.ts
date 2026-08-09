@@ -113,7 +113,7 @@ export async function cerrarCaja(montoCierreReal: number): Promise<CierreResult>
           _sum: { total: true },
         })
         const gastos = await tx.gasto.aggregate({
-          where: { cajaId: caja.id, estado: 'activo' },
+          where: { cajaId: caja.id, estado: { in: ['activo', 'pendiente_autorizacion'] } },
           _sum: { monto: true },
         })
 
