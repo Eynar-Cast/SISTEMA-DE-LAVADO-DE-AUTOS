@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:estres": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/test-estres.ts",
+    "poda:auditoria": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/poda-auditoria.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
