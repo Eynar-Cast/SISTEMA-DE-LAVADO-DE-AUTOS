@@ -64,7 +64,6 @@ export async function exportarExcel(hojas: HojaExporte[]): Promise<ResultadoExpo
 
     hojas.forEach((hoja) => {
       const ws = wb.addWorksheet(nombreHoja(hoja.nombre))
-      ws.views = [{ state: 'frozen', ySplit: 0, xSplit: 0 }]
 
       const aoa = [...(hoja.prefacio ?? []), hoja.encabezados, ...hoja.filas]
       const maxCols = Math.max(0, ...aoa.map((f) => f.length))
@@ -168,7 +167,8 @@ export async function exportarExcel(hojas: HojaExporte[]): Promise<ResultadoExpo
 
       // Autofiltro y congelamiento sobre la fila de encabezados
       if (hoja.congelar && hoja.filas.length > 0) {
-        ws.views = [{ state: 'frozen', ySplit: filaEncabezado, xSplit: 0 }]
+        const celdaTopLeft = `A${filaEncabezado + 1}`
+        ws.views = [{ state: 'frozen', ySplit: filaEncabezado, activeCell: celdaTopLeft }]
         ws.autoFilter = {
           from: { row: filaEncabezado, column: 1 },
           to: { row: filaEncabezado + hoja.filas.length, column: Math.max(1, maxCols) },

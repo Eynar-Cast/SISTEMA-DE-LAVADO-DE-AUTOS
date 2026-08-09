@@ -39,10 +39,14 @@ export function ReportesPanel({
   reporte,
   detalle,
   mensual,
+  desdeEf,
+  hastaEf,
 }: {
   reporte: ReporteRango
   detalle: DetalleReporte
   mensual: ResumenMensual
+  desdeEf: Date
+  hastaEf: Date
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -137,7 +141,7 @@ export function ReportesPanel({
       nombre: 'Resumen',
       prefacio: [
         ['Reporte del sistema de lavado de autos'],
-        ['Período', `${fechaLegibleDesdeISO(aplicado.desde) || '—'} — ${fechaLegibleDesdeISO(aplicado.hasta) || '—'}`],
+        ['Período', `${fechaLegibleDesdeISO(aplicado.desde) || fechaCorta(desdeEf)} — ${fechaLegibleDesdeISO(aplicado.hasta) || fechaCorta(hastaEf)}`],
         ['Generado', new Date().toLocaleString('es-BO')],
         [],
       ],
@@ -147,6 +151,11 @@ export function ReportesPanel({
         ['Total ventas', reporte.ingresos],
         ['Total gastos', reporte.egresos],
         ['Utilidad', reporte.utilidad],
+        ['Días con ventas', rangoExportar.length],
+        [
+          'Ticket promedio',
+          reporte.vehiculos > 0 ? Math.round((reporte.ingresos / reporte.vehiculos) * 100) / 100 : 0,
+        ],
       ],
       columnasMoneda: [1],
       congelar: false,
@@ -165,8 +174,9 @@ export function ReportesPanel({
     if (detalle.ventas.length > 0) {
       hojas.push({
         nombre: 'Detalle de ventas',
-        encabezados: ['N°', 'Fecha', 'Usuario', 'Método de pago', 'Estado del vehículo', 'Servicios', 'Total'],
+        encabezados: ['Correlativo', 'ID', 'Fecha', 'Usuario', 'Método de pago', 'Estado del vehículo', 'Servicios', 'Total'],
         filas: detalle.ventas.map((v) => [
+          v.numeroCorrelativo,
           v.id,
           formatearFecha(v.fecha),
           v.usuario,
@@ -175,7 +185,7 @@ export function ReportesPanel({
           v.servicios,
           v.total,
         ]),
-        columnasMoneda: [6],
+        columnasMoneda: [7],
         congelar: true,
       })
     }
@@ -221,6 +231,20 @@ export function ReportesPanel({
         congelar: true,
       })
     }
+
+    hojas.push({
+      nombre: 'Comparativo mensual',
+      prefacio: [['Comparación entre el mes anterior y el mes actual'], []],
+      encabezados: ['Indicador', 'Mes actual', 'Mes anterior'],
+      filas: [
+        ['N° de ventas', mensual.actual.vehiculos, mensual.anterior.vehiculos],
+        ['Total ventas', mensual.actual.ingresos, mensual.anterior.ingresos],
+        ['Total gastos', mensual.actual.egresos, mensual.anterior.egresos],
+        ['Utilidad', mensual.actual.utilidad, mensual.anterior.utilidad],
+      ],
+      columnasMoneda: [1, 2],
+      congelar: false,
+    })
 
     return hojas
   }

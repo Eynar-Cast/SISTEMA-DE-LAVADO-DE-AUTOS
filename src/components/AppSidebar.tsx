@@ -70,19 +70,19 @@ export function AppSidebar({
           <p className={`text-xs font-medium ${accento.texto}`}>{titulo}</p>
         </div>
       </div>
-      <ThemeToggle className="hidden h-9 w-9 border-white/20 bg-white/5 text-slate-200 hover:bg-white/10 md:inline-flex" />
+      <ThemeToggle className="hidden h-9 w-9 border-white/20 bg-white/5 text-slate-200 hover:bg-white/10 lg:inline-flex" />
     </div>
   )
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-slate-900 text-white md:flex dark:bg-slate-950">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-slate-900 text-white lg:flex dark:bg-slate-950">
         {encabezado}
         {nav}
         {pie}
       </aside>
 
-      <header className="sticky top-0 z-40 flex w-full items-center justify-between gap-3 border-b border-white/10 bg-slate-900 px-4 py-3 text-white md:hidden dark:bg-slate-950">
+      <header className="sticky top-0 z-40 flex w-full items-center justify-between gap-3 border-b border-white/10 bg-slate-900 px-4 py-3 text-white lg:hidden dark:bg-slate-950">
         <button
           type="button"
           onClick={() => setAbierto(true)}
@@ -116,7 +116,7 @@ export function AppSidebar({
       </header>
 
       {abierto && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setAbierto(false)}

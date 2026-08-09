@@ -28,7 +28,7 @@ export default async function ReportesPage({
     <div>
       <h1 className={tituloPaginaCls}>Reportes</h1>
       <p className={subtituloCls}>Resumen de ventas, gastos y utilidad del período</p>
-      <ReportesPanel reporte={reporte} detalle={detalle} mensual={mensual} />
+      <ReportesPanel reporte={reporte} detalle={detalle} mensual={mensual} desdeEf={desde} hastaEf={hasta} />
     </div>
   )
 }
