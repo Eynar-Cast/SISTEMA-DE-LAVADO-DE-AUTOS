@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { obtenerSesion } from '@/lib/session'
 import { Icon } from '@/components/icons'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { CambiarContrasenaForm } from './form'
 
 export default async function CambiarContrasenaPage() {
@@ -10,28 +11,32 @@ export default async function CambiarContrasenaPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-900 via-slate-900 to-slate-950 px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-900 via-slate-900 to-slate-950 px-4 dark:from-sky-950 dark:via-slate-950 dark:to-black">
       <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-sky-500/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl" />
 
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
+
       <div className="relative w-full max-w-md">
         <div className="mb-6 flex items-center justify-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-500 shadow-xl shadow-sky-500/30">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-500 shadow-xl shadow-sky-500/30 dark:from-sky-500 dark:to-cyan-400">
             <Icon nombre="usuarios" className="h-8 w-8 text-white" />
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl backdrop-blur sm:p-8">
-          <h1 className="mb-1 text-center text-2xl font-bold tracking-tight text-slate-900">
+        <div className="rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-slate-900/90 sm:p-8">
+          <h1 className="mb-1 text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Cambio obligatorio de contraseña
           </h1>
-          <p className="mb-6 text-center text-sm text-slate-500">
+          <p className="mb-6 text-center text-sm text-slate-500 dark:text-slate-400">
             Tu contraseña actual es temporal. Definí una nueva para continuar.
           </p>
           <CambiarContrasenaForm />
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
           Sistema de gestión para lavado de autos
         </p>
       </div>

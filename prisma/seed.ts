@@ -41,11 +41,6 @@ async function main() {
   if (rolAdmin) {
     const passwordHash = await bcrypt.hash('CambiarEsta123!', 10)
 
-    await prisma.usuario.updateMany({
-      where: { email: 'admin@carwash.com' },
-      data: { debeCambiarPassword: true },
-    })
-
     await prisma.usuario.upsert({
       where: { email: 'admin@carwash.com' },
       update: {},
@@ -62,11 +57,6 @@ async function main() {
 
   if (rolCaja) {
     const passwordHash = await bcrypt.hash('Cambiar123!', 10)
-
-    await prisma.usuario.updateMany({
-      where: { email: 'caja@carwash.com' },
-      data: { debeCambiarPassword: true },
-    })
 
     await prisma.usuario.upsert({
       where: { email: 'caja@carwash.com' },

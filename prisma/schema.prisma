@@ -36,7 +36,7 @@ model Usuario {
 
 model Servicio {
   id            Int            @id @default(autoincrement())
-  nombre        String
+  nombre        String         @unique
   precio        Decimal        @db.Decimal(10, 2)
   estado        String         @default("activo")
   createdAt     DateTime       @default(now()) @map("created_at")
