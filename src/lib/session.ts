@@ -1,12 +1,14 @@
 import { getServerSession } from 'next-auth'
 import { headers } from 'next/headers'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export type SesionUsuario = {
   id: number
   nombre: string
   email: string
   rol: string
+  debeCambiarPassword: boolean
 }
 
 export async function obtenerSesion(): Promise<{
@@ -14,13 +16,33 @@ export async function obtenerSesion(): Promise<{
   usuario: SesionUsuario | null
 }> {
   const session = await getServerSession(authOptions)
-  if (!session?.user) return { session: null, usuario: null }
+  if (!session?.user || !session.user.id) return { session: null, usuario: null }
+
+  // Revalida el estado real del usuario en la BD en cada request: los JWT
+  // duran 8h, pero si el admin desactiva a un usuario o le cambia el rol,
+  // el cambio debe tener efecto inmediato sin esperar a que expire la sesión.
+  const usuarioActual = await prisma.usuario.findUnique({
+    where: { id: Number(session.user.id) },
+    select: {
+      id: true,
+      nombre: true,
+      email: true,
+      estado: true,
+      debeCambiarPassword: true,
+      rol: { select: { nombre: true } },
+    },
+  })
+
+  if (!usuarioActual || usuarioActual.estado !== 'activo') {
+    return { session: null, usuario: null }
+  }
 
   const usuario: SesionUsuario = {
-    id: Number(session.user.id),
-    nombre: session.user.name ?? '',
-    email: session.user.email ?? '',
-    rol: session.user.rol,
+    id: usuarioActual.id,
+    nombre: usuarioActual.nombre,
+    email: usuarioActual.email,
+    rol: usuarioActual.rol.nombre,
+    debeCambiarPassword: usuarioActual.debeCambiarPassword,
   }
 
   return { session, usuario }

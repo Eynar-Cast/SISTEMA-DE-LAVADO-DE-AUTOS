@@ -6,11 +6,12 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { requerirAdmin, obtenerIp } from '@/lib/session'
 import { manejarError } from '@/lib/errores'
+import { esquemaContrasena } from '@/lib/password'
 
 const schemaCrear = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(80),
   email: z.string().email('Email inválido'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  password: esquemaContrasena,
   rolId: z.number().int().positive('Seleccione un rol'),
 })
 
@@ -18,9 +19,13 @@ const schemaEditar = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(80),
   email: z.string().email('Email inválido'),
   rolId: z.number().int().positive('Seleccione un rol'),
-  password: z.string().optional().refine((p) => !p || p.length >= 8, {
-    message: 'La contraseña debe tener al menos 8 caracteres',
-  }),
+  password: z
+    .string()
+    .optional()
+    .refine(
+      (p) => !p || esquemaContrasena.safeParse(p).success,
+      'La contraseña debe tener al menos 8 caracteres con mayúsculas, minúsculas y números'
+    ),
 })
 
 export type UsuarioResult = { ok: true } | { ok: false; error: string }
@@ -49,6 +54,7 @@ export async function crearUsuario(input: {
           passwordHash,
           rolId: datos.rolId,
           estado: 'activo',
+          debeCambiarPassword: true,
         },
       })
       await tx.auditoria.create({
@@ -120,7 +126,7 @@ export async function actualizarUsuario(
           nombre: datos.nombre,
           email: datos.email,
           rolId: datos.rolId,
-          ...(passwordHash ? { passwordHash } : {}),
+          ...(passwordHash ? { passwordHash, debeCambiarPassword: true } : {}),
         },
       })
       await tx.auditoria.create({

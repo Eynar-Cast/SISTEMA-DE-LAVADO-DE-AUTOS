@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { Salir } from '@/components/Salir'
 import { NavLink } from '@/components/NavLink'
 import { Icon } from '@/components/icons'
@@ -19,6 +20,16 @@ export default async function AdminLayout({
   children: React.ReactNode
 }) {
   const { usuario } = await obtenerSesion()
+
+  if (!usuario) {
+    redirect('/login')
+  }
+  if (usuario.debeCambiarPassword) {
+    redirect('/cambiar-contrasena')
+  }
+  if (usuario.rol !== 'Administrador') {
+    redirect('/caja')
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-100">

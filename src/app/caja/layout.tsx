@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { Salir } from '@/components/Salir'
 import { NavLink } from '@/components/NavLink'
 import { Icon } from '@/components/icons'
@@ -9,6 +10,16 @@ export default async function CajaLayout({
   children: React.ReactNode
 }) {
   const { usuario } = await obtenerSesion()
+
+  if (!usuario) {
+    redirect('/login')
+  }
+  if (usuario.debeCambiarPassword) {
+    redirect('/cambiar-contrasena')
+  }
+  if (usuario.rol !== 'Administrador' && usuario.rol !== 'Caja') {
+    redirect('/login')
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-100">

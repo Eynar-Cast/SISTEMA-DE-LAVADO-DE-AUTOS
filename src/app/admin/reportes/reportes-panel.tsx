@@ -26,10 +26,17 @@ export function ReportesPanel({
     router.push(`/admin/reportes?${params.toString()}`)
   }
 
+  function escaparCelda(valor: string | number): string {
+    let texto = String(valor)
+    // Neutraliza inyección de fórmulas (=, +, -, @) que Excel/Sheets ejecutan al abrir.
+    if (/^[=+\-@]/.test(texto)) {
+      texto = `'${texto}`
+    }
+    return `"${texto.replace(/"/g, '""')}"`
+  }
+
   function exportarCSV(nombre: string, filas: (string | number)[][]) {
-    const contenido = filas
-      .map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
-      .join('\n')
+    const contenido = filas.map((f) => f.map(escaparCelda).join(',')).join('\n')
     const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
