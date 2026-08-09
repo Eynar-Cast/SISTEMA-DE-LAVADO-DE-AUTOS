@@ -177,8 +177,8 @@ export function GastosCaja({
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
             {gastos.map((g) => (
-              <li key={g.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                <div className="min-w-0">
+              <li key={g.id} className="flex items-center justify-between gap-2 py-2.5 text-sm">
+                <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
                       <Icon nombre="gastos" className="h-4 w-4" />
@@ -190,7 +190,7 @@ export function GastosCaja({
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className={badgeEstado(g.estado)}>
+                  <span className={`${badgeEstado(g.estado)} whitespace-nowrap`}>
                     {TEXTO_ESTADO[g.estado] ?? g.estado}
                   </span>
                   {g.estado === 'activo' && (

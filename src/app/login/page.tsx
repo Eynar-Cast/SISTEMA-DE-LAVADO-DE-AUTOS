@@ -55,7 +55,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-slate-900/90">
+        <div className="rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-slate-900/90 sm:p-8">
           <h1 className="mb-1 text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Bienvenido al sistema
           </h1>

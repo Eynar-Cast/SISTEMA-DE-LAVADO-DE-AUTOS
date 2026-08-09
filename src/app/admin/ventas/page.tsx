@@ -1,9 +1,23 @@
-import { listarVentas } from '@/lib/queries'
+import { listarVentas, type OrdenVentas } from '@/lib/queries'
+import { fechaDesdeISO } from '@/lib/reportes'
 import { tituloPaginaCls, subtituloCls } from '@/components/ui'
 import { VentasAdmin } from './ventas-admin'
 
-export default async function AdminVentasPage() {
-  const ventas = await listarVentas()
+const ORDENES_VALIDAS: OrdenVentas[] = ['fecha_desc', 'fecha_asc', 'correlativo_desc', 'total_desc']
+
+export default async function AdminVentasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ desde?: string; hasta?: string; orden?: string }>
+}) {
+  const params = await searchParams
+  const desde = fechaDesdeISO(params.desde) ?? undefined
+  const hasta = fechaDesdeISO(params.hasta) ?? undefined
+  const orden: OrdenVentas = ORDENES_VALIDAS.includes(params.orden as OrdenVentas)
+    ? (params.orden as OrdenVentas)
+    : 'fecha_desc'
+
+  const ventas = await listarVentas({ fechaDesde: desde, fechaHasta: hasta, orden })
 
   return (
     <div>

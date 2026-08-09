@@ -21,7 +21,7 @@ export default async function CambiarContrasenaPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur">
+        <div className="rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl backdrop-blur sm:p-8">
           <h1 className="mb-1 text-center text-2xl font-bold tracking-tight text-slate-900">
             Cambio obligatorio de contraseña
           </h1>

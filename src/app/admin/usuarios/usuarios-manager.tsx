@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useTransition, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   crearUsuario,
   actualizarUsuario,
   cambiarEstadoUsuario,
 } from '@/lib/actions/usuarios'
-import { listarUsuarios, listarRoles } from '@/lib/queries'
+import { listarUsuarios, listarRoles, type OrdenUsuarios } from '@/lib/queries'
+import { formatearFecha } from '@/lib/format'
 import { Icon } from '@/components/icons'
 import {
   inputCls,
@@ -52,9 +53,32 @@ export function UsuariosManager({
   roles: RolItem[]
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [pendiente, startTransition] = useTransition()
   const [error, setError] = useState('')
   const [busqueda, setBusqueda] = useState('')
+  const [desde, setDesde] = useState(() => searchParams.get('desde') ?? '')
+  const [hasta, setHasta] = useState(() => searchParams.get('hasta') ?? '')
+  const [orden, setOrden] = useState<OrdenUsuarios>(() => {
+    const v = searchParams.get('orden')
+    return v === 'creado_desc' || v === 'nombre_asc' || v === 'rol_asc' ? v : 'creado_asc'
+  })
+
+  function aplicar(e: React.FormEvent) {
+    e.preventDefault()
+    const p = new URLSearchParams()
+    if (desde) p.set('desde', desde)
+    if (hasta) p.set('hasta', hasta)
+    p.set('orden', orden)
+    router.push(`/admin/usuarios?${p.toString()}`)
+  }
+
+  function limpiar() {
+    setDesde('')
+    setHasta('')
+    setOrden('creado_asc')
+    router.push('/admin/usuarios')
+  }
 
   const [form, setForm] = useState({
     nombre: '',
@@ -269,6 +293,49 @@ export function UsuariosManager({
           </div>
         </div>
 
+        <form
+          onSubmit={aplicar}
+          className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-700/20"
+        >
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+              Creado desde
+            </label>
+            <div className="w-full sm:w-44">
+              <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+              Hasta
+            </label>
+            <div className="w-full sm:w-44">
+              <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+              Ordenar por
+            </label>
+            <div className="w-full sm:w-52">
+              <select value={orden} onChange={(e) => setOrden(e.target.value as OrdenUsuarios)} className={inputCls}>
+                <option value="creado_asc">Creado (antiguo primero)</option>
+                <option value="creado_desc">Creado (reciente primero)</option>
+                <option value="nombre_asc">Nombre (A–Z)</option>
+                <option value="rol_asc">Rol</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className={btnPrimarioCls}>
+              Consultar
+            </button>
+            <button type="button" onClick={limpiar} className={btnSecundarioCls}>
+              Limpiar
+            </button>
+          </div>
+        </form>
+
         {usuarios.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
             <Icon nombre="usuarios" className="h-10 w-10 text-slate-300 dark:text-slate-600" />
@@ -285,13 +352,14 @@ export function UsuariosManager({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className={`${tablaCls} min-w-[640px]`}>
+            <table className={`${tablaCls} min-w-[820px]`}>
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className={thCls}>Nombre</th>
                   <th className={thCls}>Email</th>
                   <th className={thCls}>Rol</th>
                   <th className={thCls}>Estado</th>
+                  <th className={thCls}>Creado</th>
                   <th className={`${thCls} text-right`}>Acciones</th>
                 </tr>
               </thead>
@@ -328,6 +396,7 @@ export function UsuariosManager({
                         {u.estado === 'activo' ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
+                    <td className={`${tdCls} whitespace-nowrap`}>{formatearFecha(u.createdAt)}</td>
                     <td className={`${tdCls} whitespace-nowrap text-right`}>
                       <button
                         onClick={() => editar(u)}

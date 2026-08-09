@@ -100,7 +100,7 @@ export function AuditoriaPanel({
       </div>
 
       <form onSubmit={aplicar} className={`${cardCls} flex flex-wrap items-end gap-3 p-4`}>
-        <div className="min-w-60 flex-1">
+        <div className="w-full flex-1 sm:min-w-60">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Buscar
           </label>
@@ -112,47 +112,39 @@ export function AuditoriaPanel({
             className={inputCls}
           />
         </div>
-        <div>
+        <div className="w-full sm:w-60">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Tipo de acción
           </label>
-          <div className="w-60">
-            <select value={accion} onChange={(e) => setAccion(e.target.value)} className={inputCls}>
-              <option value="">Todas</option>
-              {acciones.map((a) => (
-                <option key={a.accion} value={a.accion}>
-                  {a.accion} ({a.cantidad})
-                </option>
-              ))}
-            </select>
-          </div>
+          <select value={accion} onChange={(e) => setAccion(e.target.value)} className={inputCls}>
+            <option value="">Todas</option>
+            {acciones.map((a) => (
+              <option key={a.accion} value={a.accion}>
+                {a.accion} ({a.cantidad})
+              </option>
+            ))}
+          </select>
         </div>
-        <div>
+        <div className="w-full sm:w-40">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Desde
           </label>
-          <div className="w-40">
-            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className={inputCls} />
-          </div>
+          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className={inputCls} />
         </div>
-        <div>
+        <div className="w-full sm:w-40">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Hasta
           </label>
-          <div className="w-40">
-            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className={inputCls} />
-          </div>
+          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className={inputCls} />
         </div>
-        <div>
+        <div className="w-full sm:w-52">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
             Orden
           </label>
-          <div className="w-52">
-            <select value={orden} onChange={(e) => setOrden(e.target.value)} className={inputCls}>
-              <option value="desc">Más recientes primero</option>
-              <option value="asc">Más antiguos primero</option>
-            </select>
-          </div>
+          <select value={orden} onChange={(e) => setOrden(e.target.value)} className={inputCls}>
+            <option value="desc">Más recientes primero</option>
+            <option value="asc">Más antiguos primero</option>
+          </select>
         </div>
         <button type="submit" className={btnPrimarioCls}>
           Aplicar
@@ -166,7 +158,7 @@ export function AuditoriaPanel({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className={tablaCls}>
+            <table className={`${tablaCls} min-w-[900px]`}>
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-700/40">
                   <th className={thCls}>Fecha y hora</th>

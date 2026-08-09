@@ -214,8 +214,8 @@ export function OperacionCaja({
             <>
               <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {caja.ventas.map((v) => (
-                  <li key={v.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                    <div className="min-w-0">
+                  <li key={v.id} className="flex items-center justify-between gap-2 py-2.5 text-sm">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-slate-900 dark:text-slate-100">
                         <span className="text-sky-700 dark:text-sky-300">#{v.numeroCorrelativo}</span>
                         {' '}· {formatearMoneda(v.total)} · {TEXTO_METODO_PAGO[v.metodoPago] ?? v.metodoPago}
@@ -226,7 +226,7 @@ export function OperacionCaja({
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span
-                        className={`${badgeOkCls} ${
+                        className={`${badgeOkCls} whitespace-nowrap ${
                           v.estadoVehiculo === 'finalizado'
                             ? 'bg-green-100 text-green-700 dark:bg-emerald-500/15 dark:text-emerald-300'
                             : v.estadoVehiculo === 'pagado'
@@ -281,15 +281,15 @@ export function OperacionCaja({
             <>
               <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {caja.gastos.map((g) => (
-                  <li key={g.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                    <div className="min-w-0">
+                  <li key={g.id} className="flex items-center justify-between gap-2 py-2.5 text-sm">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-slate-900 dark:text-slate-100">
                         {g.categoria} · {formatearMoneda(g.monto)}
                       </p>
                       <p className="truncate text-xs text-slate-500 dark:text-slate-400">{g.motivo}</p>
                     </div>
                     <span
-                      className={`${badgeOkCls} shrink-0 ${
+                      className={`${badgeOkCls} shrink-0 whitespace-nowrap ${
                         g.estado === 'activo'
                           ? 'bg-green-100 text-green-700 dark:bg-emerald-500/15 dark:text-emerald-300'
                           : g.estado === 'anulado'
@@ -337,7 +337,7 @@ function AbrirCajaForm({
   }
 
   return (
-    <div className={`${cardCls} mx-auto max-w-md p-8 shadow-lg`}>
+    <div className={`${cardCls} mx-auto max-w-md p-6 shadow-lg sm:p-8`}>
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
           <Icon nombre="caja" className="h-6 w-6" />
@@ -422,7 +422,7 @@ function CerrarCajaForm({
         </button>
       ) : (
         <form onSubmit={cerrar} className="flex flex-wrap items-end justify-end gap-2">
-          <div>
+          <div className="w-full sm:w-auto">
             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
               Monto real en caja (Bs)
             </label>
@@ -434,11 +434,11 @@ function CerrarCajaForm({
               onChange={(e) => setMonto(e.target.value)}
               required
               placeholder="Monto real"
-              className={`${inputCompactoCls} w-40`}
+              className={`${inputCompactoCls} w-full sm:w-40`}
               autoFocus
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="submit"
               disabled={pendiente}
@@ -603,7 +603,7 @@ function RegistrarVentaForm({
         <button
           type="submit"
           disabled={pendiente || !tieneItems || !total}
-          className={`${btnPrimarioCls} px-6 py-2.5`}
+          className={`${btnPrimarioCls} w-full px-6 py-2.5 sm:w-auto`}
         >
           {pendiente ? 'Registrando...' : 'Registrar venta'}
         </button>

@@ -1,4 +1,17 @@
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
+
+function finDeDia(fecha: Date): Date {
+  const d = new Date(fecha)
+  d.setHours(23, 59, 59, 999)
+  return d
+}
+
+export type OrdenVentas = 'fecha_desc' | 'fecha_asc' | 'correlativo_desc' | 'total_desc'
+
+export type OrdenGastos = 'fecha_desc' | 'fecha_asc' | 'monto_desc' | 'monto_asc'
+
+export type OrdenUsuarios = 'creado_desc' | 'creado_asc' | 'nombre_asc' | 'rol_asc'
 
 export type ServicioItem = {
   id: number
@@ -59,11 +72,20 @@ export async function listarVentas({
   cajaId,
   fechaDesde,
   fechaHasta,
+  orden = 'fecha_desc',
 }: {
   cajaId?: number
   fechaDesde?: Date
   fechaHasta?: Date
+  orden?: OrdenVentas
 } = {}): Promise<VentaConDetalles[]> {
+  const orderBy: Record<OrdenVentas, Prisma.VentaOrderByWithRelationInput> = {
+    fecha_desc: { fecha: 'desc' },
+    fecha_asc: { fecha: 'asc' },
+    correlativo_desc: { numeroCorrelativo: 'desc' },
+    total_desc: { total: 'desc' },
+  }
+
   const ventas = await prisma.venta.findMany({
     where: {
       ...(cajaId !== undefined ? { cajaId } : {}),
@@ -71,7 +93,7 @@ export async function listarVentas({
         ? {
             fecha: {
               ...(fechaDesde ? { gte: fechaDesde } : {}),
-              ...(fechaHasta ? { lte: fechaHasta } : {}),
+              ...(fechaHasta ? { lte: finDeDia(fechaHasta) } : {}),
             },
           }
         : {}),
@@ -83,7 +105,7 @@ export async function listarVentas({
         include: { servicio: { select: { nombre: true } } },
       },
     },
-    orderBy: { fecha: 'desc' },
+    orderBy: orderBy[orden],
     take: 500,
   })
 
@@ -98,19 +120,46 @@ export async function listarVentas({
 }
 
 export async function listarGastos(
-  criterios: { cajaId?: number; estado?: string } = {}
+  criterios: {
+    cajaId?: number
+    estado?: string
+    fechaDesde?: Date
+    fechaHasta?: Date
+    orden?: OrdenGastos
+  } = {}
 ) {
+  const {
+    cajaId,
+    estado,
+    fechaDesde,
+    fechaHasta,
+    orden = 'fecha_desc',
+  } = criterios
+  const orderBy: Record<OrdenGastos, Prisma.GastoOrderByWithRelationInput> = {
+    fecha_desc: { fecha: 'desc' },
+    fecha_asc: { fecha: 'asc' },
+    monto_desc: { monto: 'desc' },
+    monto_asc: { monto: 'asc' },
+  }
   const gastos = await prisma.gasto.findMany({
     where: {
-      ...(criterios.cajaId !== undefined ? { cajaId: criterios.cajaId } : {}),
-      ...(criterios.estado ? { estado: criterios.estado } : {}),
+      ...(cajaId !== undefined ? { cajaId } : {}),
+      ...(estado ? { estado } : {}),
+      ...(fechaDesde || fechaHasta
+        ? {
+            fecha: {
+              ...(fechaDesde ? { gte: fechaDesde } : {}),
+              ...(fechaHasta ? { lte: finDeDia(fechaHasta) } : {}),
+            },
+          }
+        : {}),
     },
     include: {
       categoriaGasto: { select: { nombre: true } },
       caja: { select: { estado: true } },
       usuario: { select: { nombre: true } },
     },
-    orderBy: { fecha: 'desc' },
+    orderBy: orderBy[orden],
     take: 500,
   })
 
@@ -132,10 +181,34 @@ export async function listarCajas({ incluirCerradas = true } = {}) {
   }))
 }
 
-export async function listarUsuarios() {
+export async function listarUsuarios({
+  fechaDesde,
+  fechaHasta,
+  orden = 'creado_asc',
+}: {
+  fechaDesde?: Date
+  fechaHasta?: Date
+  orden?: OrdenUsuarios
+} = {}) {
+  const orderBy: Record<OrdenUsuarios, Prisma.UsuarioOrderByWithRelationInput> = {
+    creado_desc: { createdAt: 'desc' },
+    creado_asc: { createdAt: 'asc' },
+    nombre_asc: { nombre: 'asc' },
+    rol_asc: { rol: { nombre: 'asc' } },
+  }
   const usuarios = await prisma.usuario.findMany({
+    where: {
+      ...(fechaDesde || fechaHasta
+        ? {
+            createdAt: {
+              ...(fechaDesde ? { gte: fechaDesde } : {}),
+              ...(fechaHasta ? { lte: finDeDia(fechaHasta) } : {}),
+            },
+          }
+        : {}),
+    },
     include: { rol: { select: { nombre: true } } },
-    orderBy: { createdAt: 'asc' },
+    orderBy: orderBy[orden],
   })
   return usuarios.map((u) => ({
     id: u.id,

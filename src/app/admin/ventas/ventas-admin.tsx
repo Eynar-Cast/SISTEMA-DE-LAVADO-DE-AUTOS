@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { VentaConDetalles } from '@/lib/queries'
+import { useRouter, useSearchParams } from 'next/navigation'
+import type { VentaConDetalles, OrdenVentas } from '@/lib/queries'
 import {
   formatearMoneda,
   formatearFecha,
@@ -9,7 +10,16 @@ import {
   TEXTO_ESTADO_VEHICULO,
 } from '@/lib/format'
 import { Icon } from '@/components/icons'
-import { inputCls, cardCls, thCls, tdCls, tablaCls, badgeOkCls } from '@/components/ui'
+import {
+  inputCls,
+  cardCls,
+  thCls,
+  tdCls,
+  tablaCls,
+  badgeOkCls,
+  btnPrimarioCls,
+  btnSecundarioCls,
+} from '@/components/ui'
 
 function badgeMetodo(metodo: string) {
   const base = badgeOkCls
@@ -32,7 +42,33 @@ function badgeEstado(estado: string) {
 }
 
 export function VentasAdmin({ ventas }: { ventas: VentaConDetalles[] }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [busqueda, setBusqueda] = useState('')
+  const [desde, setDesde] = useState(() => searchParams.get('desde') ?? '')
+  const [hasta, setHasta] = useState(() => searchParams.get('hasta') ?? '')
+  const [orden, setOrden] = useState<OrdenVentas>(() => {
+    const v = searchParams.get('orden')
+    return v === 'fecha_asc' || v === 'correlativo_desc' || v === 'total_desc'
+      ? v
+      : 'fecha_desc'
+  })
+
+  function aplicar(e: React.FormEvent) {
+    e.preventDefault()
+    const p = new URLSearchParams()
+    if (desde) p.set('desde', desde)
+    if (hasta) p.set('hasta', hasta)
+    p.set('orden', orden)
+    router.push(`/admin/ventas?${p.toString()}`)
+  }
+
+  function limpiar() {
+    setDesde('')
+    setHasta('')
+    setOrden('fecha_desc')
+    router.push('/admin/ventas')
+  }
 
   const filtradas = useMemo(() => {
     const term = busqueda.trim().toLowerCase()
@@ -83,10 +119,55 @@ export function VentasAdmin({ ventas }: { ventas: VentaConDetalles[] }) {
         </div>
       </div>
 
+      <form
+        onSubmit={aplicar}
+        className="flex flex-wrap items-end gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700"
+      >
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+            Desde
+          </label>
+          <div className="w-full sm:w-44">
+            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+            Hasta
+          </label>
+          <div className="w-full sm:w-44">
+            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+            Ordenar por
+          </label>
+          <div className="w-full sm:w-56">
+            <select value={orden} onChange={(e) => setOrden(e.target.value as OrdenVentas)} className={inputCls}>
+              <option value="fecha_desc">Fecha (reciente primero)</option>
+              <option value="fecha_asc">Fecha (antigua primero)</option>
+              <option value="correlativo_desc">Correlativo (mayor primero)</option>
+              <option value="total_desc">Monto (mayor primero)</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" className={btnPrimarioCls}>
+            Consultar
+          </button>
+          <button type="button" onClick={limpiar} className={btnSecundarioCls}>
+            Limpiar
+          </button>
+        </div>
+      </form>
+
       {ventas.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
           <Icon nombre="ventas" className="h-10 w-10 text-slate-300 dark:text-slate-600" />
-          <p className="text-sm text-slate-400 dark:text-slate-500">No hay ventas registradas.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">
+            No hay ventas en el período seleccionado.
+          </p>
         </div>
       ) : filtradas.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">

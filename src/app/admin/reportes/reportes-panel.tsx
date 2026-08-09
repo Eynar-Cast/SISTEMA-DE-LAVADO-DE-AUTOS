@@ -249,29 +249,23 @@ export function ReportesPanel({
   return (
     <div className="space-y-6">
       <form onSubmit={aplicar} className={`${cardCls} flex flex-wrap items-end gap-3 p-4`}>
-        <div>
+        <div className="w-full sm:w-44">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Desde</label>
-          <div className="w-44">
-            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className={inputCls} />
-          </div>
+          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className={inputCls} />
         </div>
-        <div>
+        <div className="w-full sm:w-44">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Hasta</label>
-          <div className="w-44">
-            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className={inputCls} />
-          </div>
+          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className={inputCls} />
         </div>
-        <div>
+        <div className="w-full sm:w-56">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Ordenar por</label>
-          <div className="w-56">
-            <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={inputCls}>
-              <option value="fecha_asc">Fecha (antigua primero)</option>
-              <option value="fecha_desc">Fecha (reciente primero)</option>
-              <option value="monto_desc">Monto (mayor primero)</option>
-            </select>
-          </div>
+          <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={inputCls}>
+            <option value="fecha_asc">Fecha (antigua primero)</option>
+            <option value="fecha_desc">Fecha (reciente primero)</option>
+            <option value="monto_desc">Monto (mayor primero)</option>
+          </select>
         </div>
-        <div className="min-w-56 flex-1">
+        <div className="w-full flex-1 sm:min-w-56">
           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Buscar</label>
           <input
             type="search"
@@ -409,7 +403,7 @@ export function ReportesPanel({
         <div className={`${cardCls} p-5`}>
           <h2 className={cardHeaderCls}>Comparativo mensual</h2>
           <div className="overflow-x-auto">
-            <table className={tablaCls}>
+            <table className={`${tablaCls} min-w-[560px]`}>
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-700/40">
                   <th className={thCls}>Período</th>
