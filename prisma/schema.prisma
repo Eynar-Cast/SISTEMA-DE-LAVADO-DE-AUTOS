@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Rol {
+  id       Int       @id @default(autoincrement())
+  nombre   String    @unique
+  usuarios Usuario[]
+
+  @@map("roles")
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  rolId        Int      @map("rol_id")
+  estado       String   @default("activo")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  rol        Rol         @relation(fields: [rolId], references: [id])
+  cajas      Caja[]
+  ventas     Venta[]
+  gastos     Gasto[]
+  auditorias Auditoria[]
+
+  @@map("usuarios")
+}
+
+model Servicio {
+  id            Int            @id @default(autoincrement())
+  nombre        String
+  precio        Decimal        @db.Decimal(10, 2)
+  estado        String         @default("activo")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  detalleVentas DetalleVenta[]
+
+  @@map("servicios")
+}
+
+model Caja {
+  id                 Int       @id @default(autoincrement())
+  usuarioId          Int       @map("usuario_id")
+  fechaApertura      DateTime  @default(now()) @map("fecha_apertura")
+  montoApertura      Decimal   @db.Decimal(10, 2) @map("monto_apertura")
+  fechaCierre        DateTime? @map("fecha_cierre")
+  montoCierreSistema Decimal?  @db.Decimal(10, 2) @map("monto_cierre_sistema")
+  montoCierreReal    Decimal?  @db.Decimal(10, 2) @map("monto_cierre_real")
+  diferencia         Decimal?  @db.Decimal(10, 2)
+  estado             String    @default("abierta")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  ventas  Venta[]
+  gastos  Gasto[]
+
+  @@index([usuarioId])
+  @@map("cajas")
+}
+
+model Venta {
+  id                Int      @id @default(autoincrement())
+  cajaId            Int      @map("caja_id")
+  numeroCorrelativo Int      @map("numero_correlativo")
+  usuarioId         Int      @map("usuario_id")
+  fecha             DateTime @default(now())
+  estadoVehiculo    String   @default("registrado") @map("estado_vehiculo")
+  metodoPago        String   @map("metodo_pago")
+  total             Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  caja          Caja           @relation(fields: [cajaId], references: [id], onDelete: Restrict)
+  usuario       Usuario        @relation(fields: [usuarioId], references: [id])
+  detalleVentas DetalleVenta[]
+
+  @@index([cajaId])
+  @@index([fecha])
+  @@map("ventas")
+}
+
+model DetalleVenta {
+  id             Int     @id @default(autoincrement())
+  ventaId        Int     @map("venta_id")
+  servicioId     Int     @map("servicio_id")
+  precioAplicado Decimal @db.Decimal(10, 2) @map("precio_aplicado")
+  cantidad       Int     @default(1)
+
+  venta    Venta    @relation(fields: [ventaId], references: [id], onDelete: Restrict)
+  servicio Servicio @relation(fields: [servicioId], references: [id])
+
+  @@map("detalle_ventas")
+}
+
+model CategoriaGasto {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  gastos Gasto[]
+
+  @@map("categorias_gasto")
+}
+
+model Gasto {
+  id               Int      @id @default(autoincrement())
+  cajaId           Int      @map("caja_id")
+  categoriaGastoId Int      @map("categoria_gasto_id")
+  usuarioId        Int      @map("usuario_id")
+  monto            Decimal  @db.Decimal(10, 2)
+  motivo           String
+  estado           String   @default("activo")
+  fecha            DateTime @default(now())
+
+  caja           Caja           @relation(fields: [cajaId], references: [id], onDelete: Restrict)
+  categoriaGasto CategoriaGasto @relation(fields: [categoriaGastoId], references: [id])
+  usuario        Usuario        @relation(fields: [usuarioId], references: [id])
+
+  @@index([cajaId])
+  @@map("gastos")
+}
+
+model Auditoria {
+  id                Int      @id @default(autoincrement())
+  usuarioId         Int      @map("usuario_id")
+  accion            String
+  tablaAfectada     String   @map("tabla_afectada")
+  valoresAnteriores Json?    @map("valores_anteriores")
+  valoresNuevos     Json?    @map("valores_nuevos")
+  ip                String?
+  timestamp         DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@index([timestamp])
+  @@map("auditoria")
+}
