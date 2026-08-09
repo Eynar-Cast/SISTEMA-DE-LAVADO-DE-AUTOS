@@ -33,7 +33,7 @@ export default async function AdminLayout({
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        <nav className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {enlaces.map((enlace) => (
             <NavLink key={enlace.href} href={enlace.href}>
               <Icon nombre={enlace.icono} className="h-5 w-5 opacity-80" />

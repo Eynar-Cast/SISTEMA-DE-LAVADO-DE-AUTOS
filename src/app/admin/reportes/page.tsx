@@ -1,4 +1,4 @@
-import { obtenerReporteRango, obtenerResumenMensual } from '@/lib/reportes'
+import { obtenerReporteRango, obtenerResumenMensual, fechaDesdeISO } from '@/lib/reportes'
 import { ReportesPanel } from './reportes-panel'
 
 export default async function ReportesPage({
@@ -9,8 +9,8 @@ export default async function ReportesPage({
   const params = await searchParams
   const hoy = new Date()
 
-  const desde = params.desde ? new Date(params.desde) : new Date(hoy.getTime() - 30 * 86400000)
-  const hasta = params.hasta ? new Date(params.hasta) : hoy
+  const desde = fechaDesdeISO(params.desde) ?? new Date(hoy.getTime() - 30 * 86400000)
+  const hasta = fechaDesdeISO(params.hasta) ?? hoy
 
   const [reporte, mensual] = await Promise.all([
     obtenerReporteRango(desde, hasta),
