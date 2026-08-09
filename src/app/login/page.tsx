@@ -2,12 +2,10 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { Icon } from '@/components/icons'
 import { btnPrimarioCls, inputCls } from '@/components/ui'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -18,21 +16,26 @@ export default function LoginPage() {
     setError('')
     setCargando(true)
 
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
+    try {
+      const res = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
 
-    setCargando(false)
+      if (res?.ok) {
+        // Navegación dura: con router.push el login quedaba pegado en /login (bug del router en dev).
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.assign('/')
+        return
+      }
 
-    if (res?.error) {
+      setCargando(false)
       setError('Email o contraseña incorrectos')
-      return
+    } catch {
+      setCargando(false)
+      setError('No se pudo conectar con el servidor. Intenta de nuevo.')
     }
-
-    router.push(res?.url ?? '/')
-    router.refresh()
   }
 
   return (
@@ -72,6 +75,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
+                autoComplete="email"
                 placeholder="usuario@carwash.com"
                 className={inputCls}
               />
@@ -86,6 +90,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 placeholder="••••••••"
                 className={inputCls}
               />
