@@ -29,7 +29,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/caja')
+    router.push(res?.url ?? '/')
     router.refresh()
   }
 
