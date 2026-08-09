@@ -23,3 +23,22 @@ export const ESTADOS_VEHICULO = ['registrado', 'pagado', 'finalizado'] as const
 export const ESTADOS_GASTO = ['activo', 'pendiente_autorizacion', 'anulado'] as const
 
 export const ESTADOS_CAJA = ['abierta', 'cerrada'] as const
+
+export const TEXTO_METODO_PAGO: Record<string, string> = {
+  efectivo: 'Efectivo',
+  QR: 'QR',
+  tarjeta: 'Tarjeta',
+  otro: 'Otro',
+}
+
+export const TEXTO_ESTADO_VEHICULO: Record<string, string> = {
+  registrado: 'Registrado',
+  pagado: 'Pagado',
+  finalizado: 'Finalizado',
+}
+
+export const TEXTO_ESTADO_GASTO: Record<string, string> = {
+  activo: 'Activo',
+  pendiente_autorizacion: 'Pendiente de autorización',
+  anulado: 'Anulado',
+}

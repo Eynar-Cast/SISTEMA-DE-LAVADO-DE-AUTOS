@@ -84,6 +84,7 @@ export async function listarVentas({
       },
     },
     orderBy: { fecha: 'desc' },
+    take: 500,
   })
 
   return ventas.map((v) => ({

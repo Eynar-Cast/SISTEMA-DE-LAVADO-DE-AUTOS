@@ -9,17 +9,17 @@ import { manejarError } from '@/lib/errores'
 
 const schemaCrear = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(80),
-  email: z.string().email('Email invÃ¡lido'),
-  password: z.string().min(8, 'La contraseÃ±a debe tener al menos 8 caracteres'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   rolId: z.number().int().positive('Seleccione un rol'),
 })
 
 const schemaEditar = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(80),
-  email: z.string().email('Email invÃ¡lido'),
+  email: z.string().email('Email inválido'),
   rolId: z.number().int().positive('Seleccione un rol'),
   password: z.string().optional().refine((p) => !p || p.length >= 8, {
-    message: 'La contraseÃ±a debe tener al menos 8 caracteres',
+    message: 'La contraseña debe tener al menos 8 caracteres',
   }),
 })
 
@@ -79,8 +79,32 @@ export async function actualizarUsuario(
     const datos = schemaEditar.parse(input)
     const ip = await obtenerIp()
 
-    const anterior = await prisma.usuario.findUnique({ where: { id } })
+    const anterior = await prisma.usuario.findUnique({
+      where: { id },
+      include: { rol: true },
+    })
     if (!anterior) return { ok: false, error: 'Usuario no encontrado' }
+
+    const nuevoRol = await prisma.rol.findUnique({ where: { id: datos.rolId } })
+    if (!nuevoRol) return { ok: false, error: 'Rol no válido' }
+
+    // No permitir que un admin se rebaje su propio privilegio
+    if (admin.id === id && nuevoRol.nombre !== 'Administrador') {
+      return { ok: false, error: 'No puede quitarse el rol de Administrador a sí mismo' }
+    }
+
+    // No permitir degradar al último administrador restante
+    if (
+      anterior.rol.nombre === 'Administrador' &&
+      nuevoRol.nombre !== 'Administrador'
+    ) {
+      const totalAdmins = await prisma.usuario.count({
+        where: { rol: { nombre: 'Administrador' }, estado: 'activo' },
+      })
+      if (totalAdmins <= 1) {
+        return { ok: false, error: 'Debe existir al menos un administrador activo' }
+      }
+    }
 
     const existeOtro = await prisma.usuario.findFirst({
       where: { email: datos.email, NOT: { id } },
@@ -137,8 +161,20 @@ export async function cambiarEstadoUsuario(
     }
     const ip = await obtenerIp()
 
-    const anterior = await prisma.usuario.findUnique({ where: { id } })
+    const anterior = await prisma.usuario.findUnique({
+      where: { id },
+      include: { rol: true },
+    })
     if (!anterior) return { ok: false, error: 'Usuario no encontrado' }
+
+    if (estado === 'inactivo' && anterior.rol.nombre === 'Administrador') {
+      const totalAdmins = await prisma.usuario.count({
+        where: { rol: { nombre: 'Administrador' }, estado: 'activo' },
+      })
+      if (totalAdmins <= 1) {
+        return { ok: false, error: 'No puede desactivar al último administrador activo' }
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
       const actualizado = await tx.usuario.update({ where: { id }, data: { estado } })

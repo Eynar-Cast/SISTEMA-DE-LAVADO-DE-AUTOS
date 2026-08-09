@@ -12,6 +12,41 @@ function finDeDia(fecha: Date): Date {
   return d
 }
 
+type DetalleFiltro = {
+  venta: { fecha: { gte: Date; lte: Date } }
+}
+
+async function agregarRanking(
+  where: DetalleFiltro,
+  limite: number | null
+): Promise<{ nombre: string; cantidad: number; total: number }[]> {
+  const detalles = await prisma.detalleVenta.findMany({
+    where,
+    select: { servicioId: true, cantidad: true, precioAplicado: true },
+  })
+
+  const acumulado = new Map<number, { cantidad: number; total: number }>()
+  for (const d of detalles) {
+    const actual = acumulado.get(d.servicioId) ?? { cantidad: 0, total: 0 }
+    actual.cantidad += d.cantidad
+    actual.total += d.precioAplicado.toNumber() * d.cantidad
+    acumulado.set(d.servicioId, actual)
+  }
+
+  const servicios = await prisma.servicio.findMany()
+  const nombrePorId = new Map(servicios.map((s) => [s.id, s.nombre]))
+
+  const ordenado = Array.from(acumulado.entries())
+    .map(([servicioId, { cantidad, total }]) => ({
+      nombre: nombrePorId.get(servicioId) ?? `Servicio #${servicioId}`,
+      cantidad,
+      total,
+    }))
+    .sort((a, b) => b.cantidad - a.cantidad)
+
+  return limite ? ordenado.slice(0, limite) : ordenado
+}
+
 export type ResumenDashboard = {
   vehiculosHoy: number
   ingresosHoy: number
@@ -25,38 +60,25 @@ export async function obtenerResumenDashboard(): Promise<ResumenDashboard> {
   const hoyDesde = inicioDeDia(new Date())
   const hoyHasta = finDeDia(new Date())
 
-  const [
-    vehiculosHoy,
-    ingresos,
-    gastos,
-    cajasAbiertas,
-    top,
-  ] = await Promise.all([
-    prisma.venta.count({
-      where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
-    }),
-    prisma.venta.aggregate({
-      where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
-      _sum: { total: true },
-    }),
-    prisma.gasto.aggregate({
-      where: { fecha: { gte: hoyDesde, lte: hoyHasta }, estado: 'activo' },
-      _sum: { monto: true },
-    }),
-    prisma.caja.count({ where: { estado: 'abierta' } }),
-    prisma.detalleVenta.groupBy({
-      by: ['servicioId'],
-      where: {
-        venta: { fecha: { gte: hoyDesde, lte: hoyHasta } },
-      },
-      _sum: { cantidad: true, precioAplicado: true },
-      orderBy: { _sum: { cantidad: 'desc' } },
-      take: 5,
-    }),
-  ])
-
-  const servicios = await prisma.servicio.findMany()
-  const nombrePorId = new Map(servicios.map((s) => [s.id, s.nombre]))
+  const [vehiculosHoy, ingresos, gastos, cajasAbiertas, topServicios] =
+    await Promise.all([
+      prisma.venta.count({
+        where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
+      }),
+      prisma.venta.aggregate({
+        where: { fecha: { gte: hoyDesde, lte: hoyHasta } },
+        _sum: { total: true },
+      }),
+      prisma.gasto.aggregate({
+        where: { fecha: { gte: hoyDesde, lte: hoyHasta }, estado: 'activo' },
+        _sum: { monto: true },
+      }),
+      prisma.caja.count({ where: { estado: 'abierta' } }),
+      agregarRanking(
+        { venta: { fecha: { gte: hoyDesde, lte: hoyHasta } } },
+        5
+      ),
+    ])
 
   const ingresosHoy = ingresos._sum.total?.toNumber() ?? 0
   const gastosHoy = gastos._sum.monto?.toNumber() ?? 0
@@ -67,11 +89,7 @@ export async function obtenerResumenDashboard(): Promise<ResumenDashboard> {
     gastosHoy,
     utilidadHoy: ingresosHoy - gastosHoy,
     cajasAbiertas,
-    topServicios: top.map((t) => ({
-      nombre: nombrePorId.get(t.servicioId) ?? `Servicio #${t.servicioId}`,
-      cantidad: t._sum.cantidad ?? 0,
-      total: (t._sum.precioAplicado?.toNumber() ?? 0) * (t._sum.cantidad ?? 0),
-    })),
+    topServicios,
   }
 }
 
@@ -102,12 +120,7 @@ export async function obtenerReporteRango(
       where: { fecha: { gte: desde, lte: hasta }, estado: 'activo' },
       _sum: { monto: true },
     }),
-    prisma.detalleVenta.groupBy({
-      by: ['servicioId'],
-      where: { venta: { fecha: { gte: desde, lte: hasta } } },
-      _sum: { cantidad: true, precioAplicado: true },
-      orderBy: { _sum: { cantidad: 'desc' } },
-    }),
+    agregarRanking({ venta: { fecha: { gte: desde, lte: hasta } } }, null),
     prisma.venta.groupBy({
       by: ['metodoPago'],
       where: { fecha: { gte: desde, lte: hasta } },
@@ -115,9 +128,6 @@ export async function obtenerReporteRango(
       _count: true,
     }),
   ])
-
-  const servicios = await prisma.servicio.findMany()
-  const nombrePorId = new Map(servicios.map((s) => [s.id, s.nombre]))
 
   const ingresos = ventas.reduce((acc, v) => acc + v.total.toNumber(), 0)
   const egresos = gastos._sum.monto?.toNumber() ?? 0
@@ -142,9 +152,9 @@ export async function obtenerReporteRango(
     egresos,
     utilidad: ingresos - egresos,
     rankingServicio: ranking.map((r) => ({
-      nombre: nombrePorId.get(r.servicioId) ?? `Servicio #${r.servicioId}`,
-      cantidad: r._sum.cantidad ?? 0,
-      total: (r._sum.precioAplicado?.toNumber() ?? 0) * (r._sum.cantidad ?? 0),
+      nombre: r.nombre,
+      cantidad: r.cantidad,
+      total: r.total,
     })),
     porMetodoPago: porMetodo.map((m) => ({
       metodoPago: m.metodoPago,

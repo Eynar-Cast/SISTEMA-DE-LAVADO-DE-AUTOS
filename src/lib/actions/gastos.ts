@@ -7,7 +7,7 @@ import { requerirAdmin, requerirCaja, obtenerIp } from '@/lib/session'
 import { manejarError } from '@/lib/errores'
 
 const schemaRegistro = z.object({
-  categoriaGastoId: z.number().int().positive('Seleccione una categorÃ­a'),
+  categoriaGastoId: z.number().int().positive('Seleccione una categoría'),
   monto: z.coerce.number().gt(0, 'El monto debe ser mayor a 0'),
   motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres').max(300),
 })
@@ -34,7 +34,7 @@ export async function registrarGasto(input: {
     const categoria = await prisma.categoriaGasto.findUnique({
       where: { id: datos.categoriaGastoId },
     })
-    if (!categoria) return { ok: false, error: 'CategorÃ­a de gasto no vÃ¡lida' }
+    if (!categoria) return { ok: false, error: 'Categoría de gasto no válida' }
 
     const gasto = await prisma.$transaction(async (tx) => {
       const creado = await tx.gasto.create({
@@ -85,15 +85,15 @@ export async function solicitarAnulacionGasto(gastoId: number): Promise<Anulacio
       include: { caja: true },
     })
     if (!gasto) return { ok: false, error: 'Gasto no encontrado' }
-    if (gasto.estado === 'anulado') return { ok: false, error: 'El gasto ya estÃ¡ anulado' }
+    if (gasto.estado === 'anulado') return { ok: false, error: 'El gasto ya está anulado' }
     if (gasto.estado === 'pendiente_autorizacion') {
-      return { ok: false, error: 'La anulaciÃ³n ya fue solicitada y estÃ¡ en espera' }
+      return { ok: false, error: 'La anulación ya fue solicitada y está en espera' }
     }
     if (usuario.rol !== 'Administrador' && gasto.caja.usuarioId !== usuario.id) {
       return { ok: false, error: 'No puede anular gastos de otro turno' }
     }
     if (gasto.caja.estado !== 'abierta') {
-      return { ok: false, error: 'La caja estÃ¡ cerrada, no se puede anular este gasto' }
+      return { ok: false, error: 'La caja está cerrada, no se puede anular este gasto' }
     }
 
     const estadoDestino = usuario.rol === 'Administrador' ? 'anulado' : 'pendiente_autorizacion'
@@ -141,7 +141,7 @@ export async function resolverAnulacionGasto(
     const gasto = await prisma.gasto.findUnique({ where: { id: gastoId } })
     if (!gasto) return { ok: false, error: 'Gasto no encontrado' }
     if (gasto.estado !== 'pendiente_autorizacion') {
-      return { ok: false, error: 'Este gasto no tiene una anulaciÃ³n pendiente' }
+      return { ok: false, error: 'Este gasto no tiene una anulación pendiente' }
     }
 
     const estadoDestino = aprobar ? 'anulado' : 'activo'

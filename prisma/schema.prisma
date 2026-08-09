@@ -94,6 +94,8 @@ model DetalleVenta {
   venta    Venta    @relation(fields: [ventaId], references: [id], onDelete: Restrict)
   servicio Servicio @relation(fields: [servicioId], references: [id])
 
+  @@index([ventaId])
+  @@index([servicioId])
   @@map("detalle_ventas")
 }
 
@@ -120,6 +122,7 @@ model Gasto {
   usuario        Usuario        @relation(fields: [usuarioId], references: [id])
 
   @@index([cajaId])
+  @@index([fecha])
   @@map("gastos")
 }
 

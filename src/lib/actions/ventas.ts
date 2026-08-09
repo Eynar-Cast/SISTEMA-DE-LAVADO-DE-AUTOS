@@ -54,19 +54,19 @@ export async function registrarVenta(input: {
     for (const item of datos.servicios) {
       const precio = precioPorId.get(item.servicioId)
       if (precio === undefined) {
-        return { ok: false, error: 'Uno de los servicios no existe o estÃ¡ inactivo' }
+        return { ok: false, error: 'Uno de los servicios no existe o está inactivo' }
       }
       total += precio * item.cantidad
     }
 
     const resultado = await prisma.$transaction(
       async (tx) => {
-        // Lock de fila sobre la caja para serializar la generaciÃ³n del correlativo
+        // Lock de fila sobre la caja para serializar la generación del correlativo
         const rows = await tx.$queryRaw<{ id: number }[]>`
           SELECT id FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
         `
         if (!rows || rows.length === 0) {
-          throw new Error('La caja ya no estÃ¡ disponible')
+          throw new Error('La caja ya no está disponible')
         }
 
         const ultima = await tx.venta.findFirst({
@@ -146,7 +146,7 @@ export async function cambiarEstadoVenta(
     })
     if (!venta) return { ok: false, error: 'Venta no encontrada' }
     if (venta.caja.estado !== 'abierta') {
-      return { ok: false, error: 'La caja ya estÃ¡ cerrada, no puede modificar esta venta' }
+      return { ok: false, error: 'La caja ya está cerrada, no puede modificar esta venta' }
     }
     if (usuario.rol !== 'Administrador' && venta.caja.usuarioId !== usuario.id) {
       return { ok: false, error: 'No puede modificar ventas de otro turno' }
@@ -159,7 +159,7 @@ export async function cambiarEstadoVenta(
       finalizado: [],
     }
     if (!transiciones[estadoActual].includes(datos.estado)) {
-      return { ok: false, error: `TransiciÃ³n invÃ¡lida de "${estadoActual}" a "${datos.estado}"` }
+      return { ok: false, error: `Transición inválida de "${estadoActual}" a "${datos.estado}"` }
     }
 
     await prisma.$transaction(async (tx) => {
@@ -180,6 +180,7 @@ export async function cambiarEstadoVenta(
     })
 
     revalidatePath('/caja')
+    revalidatePath('/admin/ventas')
     return { ok: true }
   } catch (e) {
     return { ok: false, error: manejarError(e) }
