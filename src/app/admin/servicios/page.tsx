@@ -6,7 +6,7 @@ export default async function ServiciosPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-800">Servicios</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-slate-900">Servicios</h1>
       <ServiciosManager servicios={servicios} />
     </div>
   )

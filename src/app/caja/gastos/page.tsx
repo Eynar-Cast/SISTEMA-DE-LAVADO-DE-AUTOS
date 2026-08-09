@@ -25,7 +25,10 @@ export default async function GastosCajaPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-800">Gastos del turno</h1>
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">Gastos del turno</h1>
+      <p className="mb-6 text-sm text-slate-500">
+        Registra los gastos de la caja durante el turno.
+      </p>
       <GastosCaja
         categorias={categorias}
         gastos={gastos}

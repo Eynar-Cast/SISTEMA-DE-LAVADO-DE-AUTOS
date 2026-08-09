@@ -75,15 +75,15 @@ export function GastosCaja({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {error && (
-        <div className="rounded-lg bg-red-200 p-3 text-sm text-red-700 lg:col-span-2">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 lg:col-span-2">
           {error}
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-5 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">Registrar gasto</h2>
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Registrar gasto</h2>
         {!cajaAbierta ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-500">
             Debe abrir la caja antes de registrar gastos.
           </p>
         ) : (
@@ -92,7 +92,7 @@ export function GastosCaja({
               value={categoriaId}
               onChange={(e) => setCategoriaId(e.target.value)}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
             >
               <option value="">Seleccione categoría</option>
               {categorias.map((c) => (
@@ -109,7 +109,7 @@ export function GastosCaja({
               onChange={(e) => setMonto(e.target.value)}
               required
               placeholder="Monto (Bs)"
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
             />
             <textarea
               value={motivo}
@@ -117,13 +117,13 @@ export function GastosCaja({
               required
               minLength={10}
               placeholder="Detalle del motivo (mínimo 10 caracteres)"
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
               rows={3}
             />
             <button
               type="submit"
               disabled={pendiente}
-              className="w-full rounded bg-orange-600 py-2 font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-50"
             >
               {pendiente ? 'Guardando...' : 'Registrar gasto'}
             </button>
@@ -131,21 +131,21 @@ export function GastosCaja({
         )}
       </div>
 
-      <div className="rounded-lg bg-white p-5 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">
           Gastos del turno ({gastos.length})
         </h2>
         {gastos.length === 0 ? (
-          <p className="text-sm text-gray-500">Sin gastos en este turno.</p>
+          <p className="text-sm text-slate-500">Sin gastos en este turno.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-slate-100">
             {gastos.map((g) => (
               <li key={g.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
-                  <p className="font-medium text-gray-800">
+                  <p className="font-medium text-slate-900">
                     {g.categoria} · {formatearMoneda(g.monto)}
                   </p>
-                  <p className="text-xs text-gray-500">{g.motivo}</p>
+                  <p className="text-xs text-slate-500">{g.motivo}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
@@ -153,7 +153,7 @@ export function GastosCaja({
                       g.estado === 'activo'
                         ? 'bg-green-100 text-green-700'
                         : g.estado === 'anulado'
-                          ? 'bg-gray-200 text-gray-600'
+                          ? 'bg-slate-200 text-slate-600'
                           : 'bg-amber-100 text-amber-800'
                     }`}
                   >

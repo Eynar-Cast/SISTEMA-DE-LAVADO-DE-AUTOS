@@ -5,19 +5,19 @@ export default async function AuditoriaPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold text-gray-800">Auditoría</h1>
-      <p className="mb-6 text-sm text-gray-500">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">Auditoría</h1>
+      <p className="mb-6 text-sm text-slate-500">
         Registro de solo lectura. No se puede editar ni borrar.
       </p>
 
-      <div className="rounded-lg bg-white p-5 shadow">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {registros.length === 0 ? (
-          <p className="text-sm text-gray-500">Aún no hay eventos auditados.</p>
+          <p className="text-sm text-slate-500">Aún no hay eventos auditados.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-gray-500">
+                <tr className="border-b-2 border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="py-2">Timestamp</th>
                   <th className="py-2">Usuario</th>
                   <th className="py-2">Acción</th>
@@ -27,7 +27,7 @@ export default async function AuditoriaPage() {
                   <th className="py-2">IP</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {registros.map((r) => (
                   <tr key={r.id} className="align-top">
                     <td className="py-2 whitespace-nowrap">{r.timestamp.toLocaleString()}</td>

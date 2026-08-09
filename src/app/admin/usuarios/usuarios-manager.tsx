@@ -97,18 +97,18 @@ export function UsuariosManager({
   }
 
   const inputCls =
-    'w-full rounded border border-gray-300 px-3 py-2'
+    'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30'
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {error && (
-        <div className="rounded-lg bg-red-200 p-3 text-sm text-red-700 lg:col-span-3">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 lg:col-span-3">
           {error}
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-5 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">
           {editando ? `Editar: ${editando.nombre}` : 'Nuevo usuario'}
         </h2>
         {editando ? (
@@ -152,7 +152,7 @@ export function UsuariosManager({
               <button
                 type="submit"
                 disabled={pendiente}
-                className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-50"
               >
                 Guardar
               </button>
@@ -162,7 +162,7 @@ export function UsuariosManager({
                   setEditando(null)
                   setError('')
                 }}
-                className="rounded bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Cancelar
               </button>
@@ -209,7 +209,7 @@ export function UsuariosManager({
             <button
               type="submit"
               disabled={pendiente}
-              className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
             >
               Crear usuario
             </button>
@@ -218,10 +218,10 @@ export function UsuariosManager({
       </div>
 
       <div className="rounded-lg bg-white p-5 shadow lg:col-span-2">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">Listado</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Listado</h2>
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-gray-500">
+            <tr className="border-b-2 border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <th className="py-2">Nombre</th>
               <th className="py-2">Email</th>
               <th className="py-2">Rol</th>
@@ -229,10 +229,10 @@ export function UsuariosManager({
               <th className="py-2 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {usuarios.map((u) => (
               <tr key={u.id}>
-                <td className="py-2 font-medium text-gray-800">{u.nombre}</td>
+                <td className="py-2 font-medium text-slate-900">{u.nombre}</td>
                 <td className="py-2">{u.email}</td>
                 <td className="py-2">{u.rol}</td>
                 <td className="py-2">
@@ -240,7 +240,7 @@ export function UsuariosManager({
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       u.estado === 'activo'
                         ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-200 text-gray-600'
+                        : 'bg-slate-200 text-slate-600'
                     }`}
                   >
                     {u.estado}
@@ -249,7 +249,7 @@ export function UsuariosManager({
                 <td className="py-2 text-right">
                   <button
                     onClick={() => editar(u)}
-                    className="mr-2 rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+                    className="mr-2 rounded bg-slate-200 px-2 py-1 text-xs hover:bg-slate-300"
                   >
                     Editar
                   </button>

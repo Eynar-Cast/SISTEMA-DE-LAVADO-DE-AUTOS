@@ -70,13 +70,13 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {error && (
-        <div className="rounded-lg bg-red-100 p-3 text-sm text-red-700 lg:col-span-2">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 lg:col-span-2">
           {error}
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-5 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">
           {editando ? `Editar: ${editando.nombre}` : 'Nuevo servicio'}
         </h2>
         {editando ? (
@@ -85,7 +85,7 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
               value={editNombre}
               onChange={(e) => setEditNombre(e.target.value)}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
               placeholder="Nombre del servicio"
             />
             <input
@@ -95,14 +95,14 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
               value={editPrecio}
               onChange={(e) => setEditPrecio(e.target.value)}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
               placeholder="Precio (Bs)"
             />
             <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={pendiente}
-                className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-50"
               >
                 Guardar cambios
               </button>
@@ -112,7 +112,7 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
                   setEditando(null)
                   setError('')
                 }}
-                className="rounded bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Cancelar
               </button>
@@ -124,7 +124,7 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
               placeholder="Nombre del servicio"
             />
             <input
@@ -134,13 +134,13 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
               value={precio}
               onChange={(e) => setPrecio(e.target.value)}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
               placeholder="Precio (Bs)"
             />
             <button
               type="submit"
               disabled={pendiente}
-              className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
             >
               Crear servicio
             </button>
@@ -148,31 +148,31 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
         )}
       </div>
 
-      <div className="rounded-lg bg-white p-5 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">Listado</h2>
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Listado</h2>
         {servicios.length === 0 ? (
-          <p className="text-sm text-gray-500">Aún no hay servicios registrados.</p>
+          <p className="text-sm text-slate-500">Aún no hay servicios registrados.</p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
+              <tr className="border-b-2 border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <th className="py-2">Servicio</th>
                 <th className="py-2">Precio</th>
                 <th className="py-2">Estado</th>
                 <th className="py-2 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {servicios.map((s) => (
                 <tr key={s.id}>
-                  <td className="py-2 font-medium text-gray-800">{s.nombre}</td>
+                  <td className="py-2 font-medium text-slate-900">{s.nombre}</td>
                   <td className="py-2">{formatearMoneda(s.precio)}</td>
                   <td className="py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         s.estado === 'activo'
                           ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-200 text-gray-600'
+                          : 'bg-slate-200 text-slate-600'
                       }`}
                     >
                       {s.estado}
@@ -181,7 +181,7 @@ export function ServiciosManager({ servicios }: { servicios: ServicioItem[] }) {
                   <td className="py-2 text-right">
                     <button
                       onClick={() => editar(s)}
-                      className="mr-2 rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+                      className="mr-2 rounded bg-slate-200 px-2 py-1 text-xs hover:bg-slate-300"
                     >
                       Editar
                     </button>

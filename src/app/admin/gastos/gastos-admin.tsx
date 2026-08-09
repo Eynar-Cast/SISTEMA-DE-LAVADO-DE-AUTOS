@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { resolverAnulacionGasto, solicitarAnulacionGasto } from '@/lib/actions/gastos'
 import type { listarGastos } from '@/lib/queries'
@@ -16,7 +16,7 @@ const TEXTO_ESTADO: Record<string, string> = {
 
 function badgeEstado(estado: string) {
   const base = 'rounded-full px-2 py-0.5 text-xs font-medium'
-  if (estado === 'anulado') return `${base} bg-gray-200 text-gray-600`
+  if (estado === 'anulado') return `${base} bg-slate-200 text-slate-600`
   if (estado === 'pendiente_autorizacion') return `${base} bg-amber-100 text-amber-800`
   return `${base} bg-green-100 text-green-700`
 }
@@ -24,12 +24,14 @@ function badgeEstado(estado: string) {
 export function GastosAdmin({ gastos }: { gastos: Gasto[] }) {
   const router = useRouter()
   const [pendiente, startTransition] = useTransition()
+  const [error, setError] = useState('')
 
   function ejecutar(tarea: () => Promise<{ ok: boolean; error?: string }>) {
+    setError('')
     startTransition(async () => {
       const res = await tarea()
       if (!res.ok) {
-        alert(res.error ?? 'Ocurrió un error')
+        setError(res.error ?? 'Ocurrió un error')
         return
       }
       router.refresh()
@@ -38,18 +40,21 @@ export function GastosAdmin({ gastos }: { gastos: Gasto[] }) {
 
   if (gastos.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-5 shadow">
-        <p className="text-sm text-gray-500">No hay gastos registrados.</p>
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+        <p className="text-sm text-slate-500">No hay gastos registrados.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg bg-white p-5 shadow">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-gray-500">
+            <tr className="border-b-2 border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <th className="py-2">Fecha</th>
               <th className="py-2">Categoría</th>
               <th className="py-2">Motivo</th>
@@ -60,7 +65,7 @@ export function GastosAdmin({ gastos }: { gastos: Gasto[] }) {
               <th className="py-2 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {gastos.map((g) => (
               <tr key={g.id}>
                 <td className="py-2 whitespace-nowrap">{g.fecha.toLocaleString()}</td>
@@ -87,7 +92,7 @@ export function GastosAdmin({ gastos }: { gastos: Gasto[] }) {
                       <button
                         onClick={() => ejecutar(() => resolverAnulacionGasto(g.id, false))}
                         disabled={pendiente}
-                        className="rounded bg-gray-400 px-2 py-1 text-xs text-white hover:bg-gray-500 disabled:opacity-50"
+                        className="rounded bg-slate-400 px-2 py-1 text-xs text-white hover:bg-slate-500 disabled:opacity-50"
                       >
                         Rechazar
                       </button>

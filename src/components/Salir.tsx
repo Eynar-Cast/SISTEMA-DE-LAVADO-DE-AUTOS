@@ -7,7 +7,7 @@ export function Salir({ className = '' }: { className?: string }) {
     <button
       type="button"
       onClick={() => signOut({ callbackUrl: '/login' })}
-      className={`rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-rose-600 ${className}`}
     >
       Cerrar sesión
     </button>

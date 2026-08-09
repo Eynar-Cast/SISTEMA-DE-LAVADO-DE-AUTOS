@@ -19,7 +19,7 @@ export default async function ReportesPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-800">Reportes</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-slate-900">Reportes</h1>
       <ReportesPanel reporte={reporte} mensual={mensual} />
     </div>
   )

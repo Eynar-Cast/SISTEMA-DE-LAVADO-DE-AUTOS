@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { Icon } from '@/components/icons'
+import { btnPrimarioCls, inputCls } from '@/components/ui'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -34,51 +36,75 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md"
-      >
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-800">
-          Sistema Car Wash
-        </h1>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-900 via-slate-900 to-slate-950 px-4">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-sky-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl" />
 
-        {error && (
-          <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-700">
-            {error}
+      <div className="relative w-full max-w-md">
+        <div className="mb-6 flex items-center justify-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-500 shadow-xl shadow-sky-500/30">
+            <Icon nombre="servicio" className="h-8 w-8 text-white" />
           </div>
-        )}
+        </div>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="mb-4 w-full rounded border border-gray-300 px-3 py-2"
-        />
+        <div className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur">
+          <h1 className="mb-1 text-center text-2xl font-bold tracking-tight text-slate-900">
+            Bienvenido al sistema
+          </h1>
+          <p className="mb-6 text-center text-sm text-slate-500">
+            Car Wash · Ingresa con tus credenciales
+          </p>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Contraseña
-        </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="mb-6 w-full rounded border border-gray-300 px-3 py-2"
-        />
+          {error && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
 
-        <button
-          type="submit"
-          disabled={cargando}
-          className="w-full rounded bg-blue-600 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {cargando ? 'Ingresando...' : 'Ingresar'}
-        </button>
-      </form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+                placeholder="usuario@carwash.com"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className={inputCls}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={cargando}
+              className={`${btnPrimarioCls} w-full py-2.5`}
+            >
+              {cargando ? 'Ingresando...' : 'Ingresar'}
+            </button>
+          </form>
+        </div>
+
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Sistema de gestión para lavado de autos
+        </p>
+      </div>
     </div>
   )
 }

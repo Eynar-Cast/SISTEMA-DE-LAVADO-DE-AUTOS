@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cambiarEstadoVenta } from '@/lib/actions/ventas'
-import { formatearMoneda } from '@/lib/format'
+import { formatearMoneda, TEXTO_METODO_PAGO } from '@/lib/format'
 
 type VentaItem = {
   id: number
@@ -59,12 +59,12 @@ export function VentasTurno({
       )}
       <div className="rounded-lg bg-white p-5 shadow">
         {ventas.length === 0 ? (
-          <p className="text-sm text-gray-500">Sin ventas en este turno.</p>
+          <p className="text-sm text-slate-500">Sin ventas en este turno.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-gray-500">
+                <tr className="border-b-2 border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="py-2">Correlativo</th>
                   <th className="py-2">Fecha</th>
                   <th className="py-2">Servicios</th>
@@ -74,7 +74,7 @@ export function VentasTurno({
                   <th className="py-2 text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {ventas.map((v) => (
                   <tr key={v.id}>
                     <td className="py-2 font-medium">#{v.numeroCorrelativo}</td>
@@ -84,7 +84,7 @@ export function VentasTurno({
                         .map((d) => `${d.servicioNombre} x${d.cantidad}`)
                         .join(', ')}
                     </td>
-                    <td className="py-2">{v.metodoPago}</td>
+                    <td className="py-2">{TEXTO_METODO_PAGO[v.metodoPago] ?? v.metodoPago}</td>
                     <td className="py-2">
                       <span className={badge(v.estadoVehiculo)}>
                         {TEXTO_ESTADO[v.estadoVehiculo]}
@@ -98,7 +98,7 @@ export function VentasTurno({
                         <button
                           onClick={() => avanzar(v)}
                           disabled={pendiente}
-                          className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300 disabled:opacity-50"
+                          className="rounded bg-slate-200 px-2 py-1 text-xs hover:bg-slate-300 disabled:opacity-50"
                         >
                           {v.estadoVehiculo === 'registrado' ? 'Marcar pagado' : 'Finalizar'}
                         </button>
