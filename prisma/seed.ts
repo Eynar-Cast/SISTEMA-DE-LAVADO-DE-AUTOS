@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -20,7 +21,27 @@ async function main() {
     skipDuplicates: true,
   })
 
-  console.log('Seed completado: roles y categorías de gasto creados.')
+  const rolAdmin = await prisma.rol.findUnique({
+    where: { nombre: 'Administrador' },
+  })
+
+  if (rolAdmin) {
+    const passwordHash = await bcrypt.hash('CambiarEsta123!', 10)
+
+    await prisma.usuario.upsert({
+      where: { email: 'admin@carwash.com' },
+      update: {},
+      create: {
+        nombre: 'Administrador Principal',
+        email: 'admin@carwash.com',
+        passwordHash,
+        rolId: rolAdmin.id,
+        estado: 'activo',
+      },
+    })
+  }
+
+  console.log('Seed completado: roles, categorías de gasto y usuario admin creados.')
 }
 
 main()
