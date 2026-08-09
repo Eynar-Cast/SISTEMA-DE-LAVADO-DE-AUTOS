@@ -4,15 +4,25 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requerirCaja, obtenerIp } from '@/lib/session'
-import { manejarError } from '@/lib/errores'
+import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 import { Prisma } from '@prisma/client'
 
 const schemaApertura = z.object({
-  montoApertura: z.coerce.number().gte(0, 'El monto inicial no puede ser negativo'),
+  montoApertura: z
+    .coerce
+    .number()
+    .finite('El monto debe ser un número válido')
+    .gte(0, 'El monto inicial no puede ser negativo')
+    .max(10_000_000, 'El monto inicial es demasiado alto'),
 })
 
 const schemaCierre = z.object({
-  montoCierreReal: z.coerce.number().gte(0, 'El monto real no puede ser negativo'),
+  montoCierreReal: z
+    .coerce
+    .number()
+    .finite('El monto debe ser un número válido')
+    .gte(0, 'El monto real no puede ser negativo')
+    .max(10_000_000, 'El monto real es demasiado alto'),
 })
 
 export type CajaResult =
@@ -32,7 +42,7 @@ export async function abrirCaja(montoApertura: number): Promise<CajaResult> {
           SELECT id FROM "usuarios" WHERE id = ${usuario.id} FOR UPDATE
         `
         if (!rows || rows.length === 0) {
-          throw new Error('Usuario no encontrado')
+          throw new ErrorDeNegocio('Usuario no encontrado')
         }
 
         const existente = await tx.caja.findFirst({
@@ -97,7 +107,7 @@ export async function cerrarCaja(montoCierreReal: number): Promise<CierreResult>
           SELECT id FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
         `
         if (!rows || rows.length === 0) {
-          throw new Error('La caja ya no está disponible')
+          throw new ErrorDeNegocio('La caja ya no está disponible')
         }
 
         const sigueAbierta = await tx.caja.findFirst({

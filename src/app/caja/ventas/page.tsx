@@ -1,5 +1,6 @@
 import { obtenerSesion } from '@/lib/session'
 import { obtenerCajaActiva } from '@/lib/queries'
+import { tituloPaginaCls, subtituloCls } from '@/components/ui'
 import { VentasTurno } from './ventas-turno'
 
 export default async function VentasTurnoPage() {
@@ -25,8 +26,8 @@ export default async function VentasTurnoPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">Ventas del turno</h1>
-      <p className="mb-6 text-sm text-slate-500">
+      <h1 className={tituloPaginaCls}>Ventas del turno</h1>
+      <p className={subtituloCls}>
         {caja
           ? `Caja #${caja.id} · Mostrando solo las ventas de este turno`
           : 'No hay una caja abierta en este turno.'}

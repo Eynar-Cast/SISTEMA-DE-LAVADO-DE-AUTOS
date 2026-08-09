@@ -8,6 +8,14 @@ import { requerirAdmin, obtenerIp } from '@/lib/session'
 import { manejarError } from '@/lib/errores'
 import { esquemaContrasena } from '@/lib/password'
 
+const schemaUsuarioId = z.object({
+  id: z.number().int().positive('Usuario inválido'),
+})
+
+const schemaEstadoUsuario = z.object({
+  estado: z.enum(['activo', 'inactivo'], 'Estado inválido'),
+})
+
 const schemaCrear = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(80),
   email: z.string().email('Email inválido'),
@@ -82,6 +90,7 @@ export async function actualizarUsuario(
 ): Promise<UsuarioResult> {
   try {
     const admin = await requerirAdmin()
+    schemaUsuarioId.parse({ id })
     const datos = schemaEditar.parse(input)
     const ip = await obtenerIp()
 
@@ -162,6 +171,8 @@ export async function cambiarEstadoUsuario(
 ): Promise<UsuarioResult> {
   try {
     const admin = await requerirAdmin()
+    schemaUsuarioId.parse({ id })
+    schemaEstadoUsuario.parse({ estado })
     if (admin.id === id) {
       return { ok: false, error: 'No puede desactivar su propio usuario' }
     }

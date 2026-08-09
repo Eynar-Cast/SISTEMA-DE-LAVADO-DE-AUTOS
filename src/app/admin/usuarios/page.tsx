@@ -1,4 +1,5 @@
 import { listarUsuarios, listarRoles } from '@/lib/queries'
+import { tituloPaginaCls, subtituloCls } from '@/components/ui'
 import { UsuariosManager } from './usuarios-manager'
 
 export default async function UsuariosPage() {
@@ -6,7 +7,8 @@ export default async function UsuariosPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold tracking-tight text-slate-900">Usuarios</h1>
+      <h1 className={tituloPaginaCls}>Usuarios</h1>
+      <p className={subtituloCls}>Gestiona los usuarios del sistema y sus roles de acceso</p>
       <UsuariosManager usuarios={usuarios} roles={roles} />
     </div>
   )

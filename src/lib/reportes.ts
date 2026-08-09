@@ -161,6 +161,83 @@ export type ResumenMensual = {
   anterior: { etiqueta: string; vehiculos: number; ingresos: number; egresos: number; utilidad: number }
 }
 
+export type DetalleVentaReporte = {
+  id: number
+  numeroCorrelativo: number
+  fecha: Date
+  usuario: string
+  metodoPago: string
+  estadoVehiculo: string
+  servicios: string
+  total: number
+}
+
+export type DetalleGastoReporte = {
+  id: number
+  fecha: Date
+  usuario: string
+  categoria: string
+  motivo: string
+  monto: number
+  estado: string
+}
+
+export type DetalleReporte = {
+  ventas: DetalleVentaReporte[]
+  gastos: DetalleGastoReporte[]
+}
+
+export async function obtenerDetalleReporte(
+  fechaDesde: Date,
+  fechaHasta: Date
+): Promise<DetalleReporte> {
+  const desde = inicioDeDia(fechaDesde)
+  const hasta = finDeDia(fechaHasta)
+
+  const [ventas, gastos] = await Promise.all([
+    prisma.venta.findMany({
+      where: { fecha: { gte: desde, lte: hasta } },
+      include: {
+        usuario: { select: { nombre: true } },
+        detalleVentas: {
+          include: { servicio: { select: { nombre: true } } },
+        },
+      },
+      orderBy: { fecha: 'desc' },
+    }),
+    prisma.gasto.findMany({
+      where: { fecha: { gte: desde, lte: hasta }, estado: 'activo' },
+      include: {
+        usuario: { select: { nombre: true } },
+        categoriaGasto: { select: { nombre: true } },
+      },
+      orderBy: { fecha: 'desc' },
+    }),
+  ])
+
+  return {
+    ventas: ventas.map((v) => ({
+      id: v.id,
+      numeroCorrelativo: v.numeroCorrelativo,
+      fecha: v.fecha,
+      usuario: v.usuario.nombre,
+      metodoPago: v.metodoPago,
+      estadoVehiculo: v.estadoVehiculo,
+      servicios: v.detalleVentas.map((d) => d.servicio.nombre).join(', '),
+      total: v.total.toNumber(),
+    })),
+    gastos: gastos.map((g) => ({
+      id: g.id,
+      fecha: g.fecha,
+      usuario: g.usuario.nombre,
+      categoria: g.categoriaGasto.nombre,
+      motivo: g.motivo,
+      monto: g.monto.toNumber(),
+      estado: g.estado,
+    })),
+  }
+}
+
 export async function obtenerResumenMensual(): Promise<ResumenMensual> {
   const ahora = new Date()
   const mesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1)

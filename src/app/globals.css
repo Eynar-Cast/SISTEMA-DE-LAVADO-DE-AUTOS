@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f1f5f9;
   --foreground: #0f172a;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -26,6 +35,10 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark * {
+  scrollbar-color: #334155 transparent;
 }
 
 *::-webkit-scrollbar {
@@ -61,5 +74,19 @@ body {
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
   background: #475569;
+  background-clip: content-box;
+}
+
+.dark .sidebar-scroll {
+  scrollbar-color: #475569 transparent;
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #475569;
+  background-clip: content-box;
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
   background-clip: content-box;
 }

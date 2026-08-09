@@ -4,12 +4,25 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requerirAdmin, requerirCaja, obtenerIp } from '@/lib/session'
-import { manejarError } from '@/lib/errores'
+import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 
 const schemaRegistro = z.object({
   categoriaGastoId: z.number().int().positive('Seleccione una categoría'),
-  monto: z.coerce.number().gt(0, 'El monto debe ser mayor a 0'),
+  monto: z
+    .coerce
+    .number()
+    .finite('El monto debe ser un número válido')
+    .gt(0, 'El monto debe ser mayor a 0')
+    .max(10_000_000, 'El monto es demasiado alto'),
   motivo: z.string().min(10, 'El motivo debe tener al menos 10 caracteres').max(300),
+})
+
+const schemaGastoId = z.object({
+  gastoId: z.number().int().positive('Gasto inválido'),
+})
+
+const schemaResolver = z.object({
+  aprobar: z.boolean(),
 })
 
 export type GastoResult = { ok: true; gastoId: number } | { ok: false; error: string }
@@ -42,7 +55,7 @@ export async function registrarGasto(input: {
         SELECT id, estado FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
       `
       if (!rows || rows.length === 0 || rows[0].estado !== 'abierta') {
-        throw new Error('La caja se cerró, no se puede registrar el gasto')
+        throw new ErrorDeNegocio('La caja se cerró, no se puede registrar el gasto')
       }
 
       const creado = await tx.gasto.create({
@@ -86,6 +99,7 @@ export type AnulacionResult = { ok: true } | { ok: false; error: string }
 export async function solicitarAnulacionGasto(gastoId: number): Promise<AnulacionResult> {
   try {
     const usuario = await requerirCaja()
+    schemaGastoId.parse({ gastoId })
     const ip = await obtenerIp()
 
     const gasto = await prisma.gasto.findUnique({
@@ -113,7 +127,7 @@ export async function solicitarAnulacionGasto(gastoId: number): Promise<Anulacio
         SELECT id, estado FROM "cajas" WHERE id = ${gasto.caja.id} FOR UPDATE
       `
       if (!rowsCaja || rowsCaja.length === 0 || rowsCaja[0].estado !== 'abierta') {
-        throw new Error('La caja se cerró, no se puede anular el gasto')
+        throw new ErrorDeNegocio('La caja se cerró, no se puede anular el gasto')
       }
 
       const actualizado = await tx.gasto.update({
@@ -151,6 +165,8 @@ export async function resolverAnulacionGasto(
 ): Promise<AnulacionResult> {
   try {
     const admin = await requerirAdmin()
+    schemaGastoId.parse({ gastoId })
+    schemaResolver.parse({ aprobar })
     const ip = await obtenerIp()
 
     const gasto = await prisma.gasto.findUnique({ where: { id: gastoId } })

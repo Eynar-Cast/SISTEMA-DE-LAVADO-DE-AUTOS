@@ -1,5 +1,6 @@
 import { obtenerSesion } from '@/lib/session'
 import { obtenerCajaActiva, listarCategoriasGasto } from '@/lib/queries'
+import { tituloPaginaCls, subtituloCls } from '@/components/ui'
 import { GastosCaja } from './gastos-caja'
 
 export default async function GastosCajaPage() {
@@ -25,10 +26,8 @@ export default async function GastosCajaPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">Gastos del turno</h1>
-      <p className="mb-6 text-sm text-slate-500">
-        Registra los gastos de la caja durante el turno.
-      </p>
+      <h1 className={tituloPaginaCls}>Gastos del turno</h1>
+      <p className={subtituloCls}>Registra los gastos de la caja durante el turno.</p>
       <GastosCaja
         categorias={categorias}
         gastos={gastos}

@@ -8,7 +8,20 @@ import { manejarError } from '@/lib/errores'
 
 const schemaServicio = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(80),
-  precio: z.coerce.number().positive('El precio debe ser mayor a 0'),
+  precio: z
+    .coerce
+    .number()
+    .finite('El precio debe ser un número válido')
+    .positive('El precio debe ser mayor a 0')
+    .max(10_000_000, 'El precio es demasiado alto'),
+})
+
+const schemaIdServicio = z.object({
+  id: z.number().int().positive('Servicio inválido'),
+})
+
+const schemaEstado = z.object({
+  estado: z.enum(['activo', 'inactivo'], 'Estado inválido'),
 })
 
 export type ServicioResult = { ok: true } | { ok: false; error: string }
@@ -56,6 +69,7 @@ export async function actualizarServicio(
 ): Promise<ServicioResult> {
   try {
     const usuario = await requerirAdmin()
+    schemaIdServicio.parse({ id })
     const datos = schemaServicio.parse(input)
     const ip = await obtenerIp()
 
@@ -99,6 +113,8 @@ export async function cambiarEstadoServicio(
 ): Promise<ServicioResult> {
   try {
     const usuario = await requerirAdmin()
+    schemaIdServicio.parse({ id })
+    schemaEstado.parse({ estado })
     const ip = await obtenerIp()
 
     const anterior = await prisma.servicio.findUnique({ where: { id } })

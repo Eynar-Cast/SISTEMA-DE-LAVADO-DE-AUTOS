@@ -1,4 +1,5 @@
 import { listarServicios } from '@/lib/queries'
+import { tituloPaginaCls, subtituloCls } from '@/components/ui'
 import { ServiciosManager } from './servicios-manager'
 
 export default async function ServiciosPage() {
@@ -6,7 +7,8 @@ export default async function ServiciosPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold tracking-tight text-slate-900">Servicios</h1>
+      <h1 className={tituloPaginaCls}>Servicios</h1>
+      <p className={subtituloCls}>Administra los servicios que se ofrecen en el lavado</p>
       <ServiciosManager servicios={servicios} />
     </div>
   )

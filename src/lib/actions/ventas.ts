@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requerirCaja, obtenerIp } from '@/lib/session'
-import { manejarError } from '@/lib/errores'
+import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 import { Prisma } from '@prisma/client'
 
 const schemaVenta = z.object({
@@ -12,10 +12,16 @@ const schemaVenta = z.object({
     .array(
       z.object({
         servicioId: z.number().int().positive(),
-        cantidad: z.number().int().positive().default(1),
+        cantidad: z
+          .number()
+          .int()
+          .positive()
+          .max(1000, 'La cantidad por servicio no puede superar 1000')
+          .default(1),
       })
     )
-    .min(1, 'Debe seleccionar al menos un servicio'),
+    .min(1, 'Debe seleccionar al menos un servicio')
+    .max(50, 'No puede registrar más de 50 servicios por venta'),
   metodoPago: z.enum(['efectivo', 'QR', 'tarjeta', 'otro']),
 })
 
@@ -66,10 +72,10 @@ export async function registrarVenta(input: {
           SELECT id, estado FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
         `
         if (!rows || rows.length === 0) {
-          throw new Error('La caja ya no está disponible')
+          throw new ErrorDeNegocio('La caja ya no está disponible')
         }
         if (rows[0].estado !== 'abierta') {
-          throw new Error('La caja ya fue cerrada, no se puede registrar la venta')
+          throw new ErrorDeNegocio('La caja ya fue cerrada, no se puede registrar la venta')
         }
 
         const ultima = await tx.venta.findFirst({
@@ -171,7 +177,7 @@ export async function cambiarEstadoVenta(
         SELECT id, estado FROM "cajas" WHERE id = ${venta.caja.id} FOR UPDATE
       `
       if (!rows || rows.length === 0 || rows[0].estado !== 'abierta') {
-        throw new Error('La caja se cerró, no se puede modificar la venta')
+        throw new ErrorDeNegocio('La caja se cerró, no se puede modificar la venta')
       }
 
       const actualizada = await tx.venta.update({
