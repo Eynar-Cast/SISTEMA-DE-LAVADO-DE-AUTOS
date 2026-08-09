@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "test:estres": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/test-estres.ts",
     "poda:auditoria": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/poda-auditoria.ts"
   },
