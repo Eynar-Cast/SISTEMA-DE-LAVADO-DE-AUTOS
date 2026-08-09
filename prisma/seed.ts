@@ -21,8 +21,21 @@ async function main() {
     skipDuplicates: true,
   })
 
+  await prisma.servicio.createMany({
+    data: [
+      { nombre: 'Lavado simple', precio: 30 },
+      { nombre: 'Lavado full', precio: 60 },
+      { nombre: 'Lavado premium', precio: 80 },
+      { nombre: 'Aspirado', precio: 15 },
+    ],
+    skipDuplicates: true,
+  })
+
   const rolAdmin = await prisma.rol.findUnique({
     where: { nombre: 'Administrador' },
+  })
+  const rolCaja = await prisma.rol.findUnique({
+    where: { nombre: 'Caja' },
   })
 
   if (rolAdmin) {
@@ -41,7 +54,23 @@ async function main() {
     })
   }
 
-  console.log('Seed completado: roles, categorías de gasto y usuario admin creados.')
+  if (rolCaja) {
+    const passwordHash = await bcrypt.hash('Cambiar123!', 10)
+
+    await prisma.usuario.upsert({
+      where: { email: 'caja@carwash.com' },
+      update: {},
+      create: {
+        nombre: 'Operador de Caja',
+        email: 'caja@carwash.com',
+        passwordHash,
+        rolId: rolCaja.id,
+        estado: 'activo',
+      },
+    })
+  }
+
+  console.log('Seed completado: roles, categorías, servicios y usuarios creados.')
 }
 
 main()
