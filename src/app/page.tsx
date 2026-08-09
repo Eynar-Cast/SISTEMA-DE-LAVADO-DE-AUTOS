@@ -8,6 +8,10 @@ export default async function Home() {
     redirect('/login')
   }
 
+  if (usuario.debeCambiarPassword) {
+    redirect('/cambiar-contrasena')
+  }
+
   if (usuario.rol === 'Administrador') {
     redirect('/admin/dashboard')
   }

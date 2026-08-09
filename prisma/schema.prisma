@@ -16,13 +16,14 @@ model Rol {
 }
 
 model Usuario {
-  id           Int      @id @default(autoincrement())
-  nombre       String
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  rolId        Int      @map("rol_id")
-  estado       String   @default("activo")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id                   Int      @id @default(autoincrement())
+  nombre               String
+  email                String   @unique
+  passwordHash         String   @map("password_hash")
+  rolId                Int      @map("rol_id")
+  estado               String   @default("activo")
+  debeCambiarPassword  Boolean  @default(false) @map("debe_cambiar_password")
+  createdAt            DateTime @default(now()) @map("created_at")
 
   rol        Rol         @relation(fields: [rolId], references: [id])
   cajas      Caja[]
