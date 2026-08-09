@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
 interface RegistrarAuditoriaParams {
   usuarioId: number
   accion: string
   tablaAfectada: string
-  valoresAnteriores: Record<string, unknown> | null
-  valoresNuevos: Record<string, unknown> | null
+  valoresAnteriores: Prisma.InputJsonValue | null
+  valoresNuevos: Prisma.InputJsonValue | null
   ip?: string
   tx?: Prisma.TransactionClient
 }
@@ -27,8 +27,8 @@ export async function registrarAuditoria({
       usuarioId,
       accion,
       tablaAfectada,
-      valoresAnteriores: valoresAnteriores as any,
-      valoresNuevos: valoresNuevos as any,
+      valoresAnteriores: valoresAnteriores ?? undefined,
+      valoresNuevos: valoresNuevos ?? undefined,
       ip: ip ?? null,
     },
   })
