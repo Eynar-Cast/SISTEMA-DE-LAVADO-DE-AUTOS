@@ -6,16 +6,27 @@ const COLOR_ENCABEZADO = 'FF1D4ED8'
 const COLOR_TITULO = 'FF0F172A'
 const COLOR_BANDA = 'FFF1F5F9'
 const COLOR_TEXTO_BORDE = 'FF64748B'
+const COLOR_BLOQUE_TITULO = 'FF334155'
 
 export type CeldaFila = string | number
+
+export type BloqueTabla = {
+  titulo?: string
+  encabezados: CeldaFila[]
+  filas: CeldaFila[][]
+  columnasMoneda?: number[]
+  sinTotal?: boolean
+}
 
 export type HojaExporte = {
   nombre: string
   prefacio?: CeldaFila[][]
-  encabezados: CeldaFila[]
-  filas: CeldaFila[][]
+  bloques?: BloqueTabla[]
+  encabezados?: CeldaFila[]
+  filas?: CeldaFila[][]
   columnasMoneda?: number[]
   congelar?: boolean
+  sinTotal?: boolean
 }
 
 export type ResultadoExporte = { ok: boolean; motivo?: string }
@@ -56,6 +67,59 @@ function descargar(datos: Uint8Array) {
   URL.revokeObjectURL(url)
 }
 
+function estilizarHeader(fila: ExcelJS.Row) {
+  fila.eachCell((celda) => {
+    celda.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }
+    celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ENCABEZADO } }
+    celda.alignment = { vertical: 'middle', horizontal: 'center' }
+    celda.border = { bottom: { style: 'thin', color: { argb: COLOR_TEXTO_BORDE } } }
+  })
+  fila.height = 22
+}
+
+function estilizarFilaDatos(fila: ExcelJS.Row, esImpar: boolean, columnasMoneda?: number[]) {
+  fila.eachCell((celda, col) => {
+    celda.alignment = { vertical: 'middle' }
+    if (esImpar) {
+      celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BANDA } }
+    }
+    if (columnasMoneda?.includes(col - 1) && typeof celda.value === 'number') {
+      celda.numFmt = FORMATO_MONEDA
+      celda.alignment = { vertical: 'middle', horizontal: 'right' }
+    }
+  })
+}
+
+function agregarFilaTotal(
+  ws: ExcelJS.Worksheet,
+  encabezados: CeldaFila[],
+  filas: CeldaFila[][],
+  columnasMoneda?: number[]
+) {
+  const ultimaColMoneda = (columnasMoneda ?? []).slice(-1)[0]
+  if (filas.length === 0 || ultimaColMoneda === undefined) return
+
+  const filaTotal = ws.addRow(
+    encabezados.map((_, c) =>
+      c === 0
+        ? 'TOTAL'
+        : columnasMoneda?.some((m) => m === c)
+          ? filas.reduce((acc, f) => acc + (typeof f[c] === 'number' ? (f[c] as number) : 0), 0)
+          : ''
+    )
+  )
+  filaTotal.eachCell((celda, col) => {
+    celda.font = { name: 'Calibri', size: 11, bold: true }
+    if (columnasMoneda?.some((m) => m === col - 1) && typeof celda.value === 'number') {
+      celda.numFmt = FORMATO_MONEDA
+      celda.alignment = { vertical: 'middle', horizontal: 'right' }
+    } else {
+      celda.alignment = { vertical: 'middle' }
+    }
+  })
+  ws.getRow(filaTotal.number).height = 20
+}
+
 export async function exportarExcel(hojas: HojaExporte[]): Promise<ResultadoExporte> {
   try {
     const wb = new ExcelJS.Workbook()
@@ -64,11 +128,6 @@ export async function exportarExcel(hojas: HojaExporte[]): Promise<ResultadoExpo
 
     hojas.forEach((hoja) => {
       const ws = wb.addWorksheet(nombreHoja(hoja.nombre))
-
-      const aoa = [...(hoja.prefacio ?? []), hoja.encabezados, ...hoja.filas]
-      const maxCols = Math.max(0, ...aoa.map((f) => f.length))
-      const filaEncabezado = (hoja.prefacio?.length ?? 0) + 1
-
       ws.properties.defaultRowHeight = 18
 
       // Filas de prefacio (título / período / generado)
@@ -78,102 +137,88 @@ export async function exportarExcel(hojas: HojaExporte[]): Promise<ResultadoExpo
           celda.font = {
             name: 'Calibri',
             size: i === 0 ? 14 : 11,
-            bold: i === 0 || i > 0,
+            bold: true,
             color: { argb: i === 0 ? 'FFFFFFFF' : 'FF334155' },
           }
           celda.fill =
             i === 0
               ? { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITULO } }
               : { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BANDA } }
-          celda.alignment = {
-            vertical: 'middle',
-            horizontal: i === 0 ? 'center' : 'left',
-          }
+          celda.alignment = { vertical: 'middle', horizontal: i === 0 ? 'center' : 'left' }
         })
-        if (i === 0 && maxCols > 0) {
-          ws.mergeCells(filaExcel.number, 1, filaExcel.number, maxCols)
+        if (i === 0) {
+          ws.mergeCells(filaExcel.number, 1, filaExcel.number, 3)
           ws.getRow(filaExcel.number).height = 26
         }
       })
 
-      // Fila de encabezados
-      const filaHeader = ws.addRow(hoja.encabezados)
-      filaHeader.eachCell((celda) => {
-        celda.font = {
-          name: 'Calibri',
-          size: 11,
-          bold: true,
-          color: { argb: 'FFFFFFFF' },
-        }
-        celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ENCABEZADO } }
-        celda.alignment = { vertical: 'middle', horizontal: 'center' }
-        celda.border = {
-          bottom: { style: 'thin', color: { argb: COLOR_TEXTO_BORDE } },
-        }
-      })
-      filaHeader.height = 22
+      const aoaAncho: CeldaFila[][] = [...(hoja.prefacio ?? [])]
 
-      // Filas de datos
-      hoja.filas.forEach((fila, i) => {
-        const filaExcel = ws.addRow(fila)
-        filaExcel.eachCell((celda, col) => {
-          celda.alignment = { vertical: 'middle' }
-          if (i % 2 === 1) {
-            celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_BANDA } }
-          }
-          if (hoja.columnasMoneda?.includes(col - 1)) {
-            if (typeof celda.value === 'number') {
-              celda.numFmt = FORMATO_MONEDA
-              celda.alignment = { vertical: 'middle', horizontal: 'right' }
+      if (hoja.bloques && hoja.bloques.length > 0) {
+        // --- Hoja de MÚLTIPLES bloques apilados (ej. Resumen completo) ---
+        hoja.bloques.forEach((bloque) => {
+          if (bloque.titulo) {
+            const filaTitulo = ws.addRow([bloque.titulo])
+            filaTitulo.getCell(1).font = {
+              name: 'Calibri',
+              size: 12,
+              bold: true,
+              color: { argb: COLOR_BLOQUE_TITULO },
             }
+            filaTitulo.height = 20
           }
-        })
-      })
 
-      // Fila total cuando hay moneda al final
-      const ultimaColMoneda = (hoja.columnasMoneda ?? []).slice(-1)[0]
-      if (hoja.filas.length > 0 && ultimaColMoneda !== undefined) {
-        const filaTotal = ws.addRow(
-          hoja.encabezados.map((_, c) =>
-            c === 0
-              ? 'TOTAL'
-              : hoja.columnasMoneda?.some((m) => m === c)
-                ? hoja.filas.reduce(
-                    (acc, f) => acc + (typeof f[c] === 'number' ? (f[c] as number) : 0),
-                    0
-                  )
-                : ''
-          )
-        )
-        filaTotal.eachCell((celda, col) => {
-          celda.font = { name: 'Calibri', size: 11, bold: true }
-          if (hoja.columnasMoneda?.some((m) => m === col - 1)) {
-            if (typeof celda.value === 'number') {
-              celda.numFmt = FORMATO_MONEDA
-              celda.alignment = { vertical: 'middle', horizontal: 'right' }
-            }
-          } else {
-            celda.alignment = { vertical: 'middle' }
+          const filaHeader = ws.addRow(bloque.encabezados)
+          estilizarHeader(filaHeader)
+
+          bloque.filas.forEach((fila, i) => {
+            const filaExcel = ws.addRow(fila)
+            estilizarFilaDatos(filaExcel, i % 2 === 1, bloque.columnasMoneda)
+          })
+
+          if (!bloque.sinTotal) {
+            agregarFilaTotal(ws, bloque.encabezados, bloque.filas, bloque.columnasMoneda)
           }
+
+          ws.addRow([]) // espacio en blanco entre bloques
+
+          aoaAncho.push(bloque.encabezados, ...bloque.filas)
         })
-        ws.getRow(filaTotal.number).height = 20
+      } else {
+        // --- Hoja de tabla ÚNICA (comportamiento anterior) ---
+        const encabezados = hoja.encabezados ?? []
+        const filas = hoja.filas ?? []
+        const filaEncabezado = (hoja.prefacio?.length ?? 0) + 1
+        const maxCols = Math.max(0, ...[...aoaAncho, encabezados, ...filas].map((f) => f.length))
+
+        const filaHeader = ws.addRow(encabezados)
+        estilizarHeader(filaHeader)
+
+        filas.forEach((fila, i) => {
+          const filaExcel = ws.addRow(fila)
+          estilizarFilaDatos(filaExcel, i % 2 === 1, hoja.columnasMoneda)
+        })
+
+        if (!hoja.sinTotal) {
+          agregarFilaTotal(ws, encabezados, filas, hoja.columnasMoneda)
+        }
+
+        if (hoja.congelar && filas.length > 0) {
+          const celdaTopLeft = `A${filaEncabezado + 1}`
+          ws.views = [{ state: 'frozen', ySplit: filaEncabezado, activeCell: celdaTopLeft }]
+          ws.autoFilter = {
+            from: { row: filaEncabezado, column: 1 },
+            to: { row: filaEncabezado + filas.length, column: Math.max(1, maxCols) },
+          }
+        }
+
+        aoaAncho.push(encabezados, ...filas)
       }
 
-      // Anchos de columna
-      const anchos = calcularAnchos(aoa)
+      const anchos = calcularAnchos(aoaAncho)
       anchos.forEach((ancho, i) => {
         ws.getColumn(i + 1).width = Math.min(48, Math.max(10, ancho + 2))
       })
-
-      // Autofiltro y congelamiento sobre la fila de encabezados
-      if (hoja.congelar && hoja.filas.length > 0) {
-        const celdaTopLeft = `A${filaEncabezado + 1}`
-        ws.views = [{ state: 'frozen', ySplit: filaEncabezado, activeCell: celdaTopLeft }]
-        ws.autoFilter = {
-          from: { row: filaEncabezado, column: 1 },
-          to: { row: filaEncabezado + hoja.filas.length, column: Math.max(1, maxCols) },
-        }
-      }
     })
 
     const buffer = (await wb.xlsx.writeBuffer()) as unknown as Uint8Array

@@ -137,6 +137,20 @@ export function ReportesPanel({
   function construirHojas(): HojaExporte[] {
     const hojas: HojaExporte[] = []
 
+    // Gastos agrupados por categoría (solo activos, excluye anulados)
+    const porCategoria = new Map<string, { cantidad: number; total: number }>()
+    detalle.gastos
+      .filter((g) => g.estado === 'activo')
+      .forEach((g) => {
+        const actual = porCategoria.get(g.categoria) ?? { cantidad: 0, total: 0 }
+        actual.cantidad += 1
+        actual.total += g.monto
+        porCategoria.set(g.categoria, actual)
+      })
+    const filasCategoria = Array.from(porCategoria.entries())
+      .sort((a, b) => b[1].total - a[1].total)
+      .map(([categoria, datos]) => [categoria, datos.cantidad, datos.total])
+
     hojas.push({
       nombre: 'Resumen',
       prefacio: [
@@ -145,20 +159,44 @@ export function ReportesPanel({
         ['Generado', new Date().toLocaleString('es-BO')],
         [],
       ],
-      encabezados: ['Indicador', 'Valor'],
-      filas: [
-        ['N° de ventas', reporte.vehiculos],
-        ['Total ventas', reporte.ingresos],
-        ['Total gastos', reporte.egresos],
-        ['Utilidad', reporte.utilidad],
-        ['Días con ventas', rangoExportar.length],
-        [
-          'Ticket promedio',
-          reporte.vehiculos > 0 ? Math.round((reporte.ingresos / reporte.vehiculos) * 100) / 100 : 0,
-        ],
+      bloques: [
+        {
+          titulo: 'Resumen financiero',
+          encabezados: ['Concepto', 'Valor'],
+          filas: [
+            ['Ingresos (ventas de servicios)', reporte.ingresos],
+            ['Egresos (gastos del negocio)', reporte.egresos],
+            ['Utilidad neta', reporte.utilidad],
+            [
+              'Ticket promedio por vehículo',
+              reporte.vehiculos > 0 ? Math.round((reporte.ingresos / reporte.vehiculos) * 100) / 100 : 0,
+            ],
+          ],
+          columnasMoneda: [1],
+          sinTotal: true,
+        },
+        {
+          titulo: 'Actividad operativa',
+          encabezados: ['Indicador', 'Cantidad'],
+          filas: [
+            ['Vehículos atendidos (N° de ventas)', reporte.vehiculos],
+            ['Días con al menos una venta', rangoExportar.length],
+          ],
+          sinTotal: true,
+        },
+        {
+          titulo: 'Servicios vendidos (detalle por tipo)',
+          encabezados: ['Servicio', 'Veces vendido', 'Total'],
+          filas: reporte.rankingServicio.map((s) => [s.nombre, s.cantidad, s.total]),
+          columnasMoneda: [2],
+        },
+        {
+          titulo: 'Gastos del negocio (detalle por categoría)',
+          encabezados: ['Categoría', 'Veces registrado', 'Total'],
+          filas: filasCategoria,
+          columnasMoneda: [2],
+        },
       ],
-      columnasMoneda: [1],
-      congelar: false,
     })
 
     if (rangoExportar.length > 0) {
@@ -208,16 +246,6 @@ export function ReportesPanel({
       })
     }
 
-    if (reporte.rankingServicio.length > 0) {
-      hojas.push({
-        nombre: 'Ranking de servicios',
-        encabezados: ['Servicio', 'Cantidad', 'Total'],
-        filas: reporte.rankingServicio.map((s) => [s.nombre, s.cantidad, s.total]),
-        columnasMoneda: [2],
-        congelar: true,
-      })
-    }
-
     if (reporte.porMetodoPago.length > 0) {
       hojas.push({
         nombre: 'Métodos de pago',
@@ -243,7 +271,7 @@ export function ReportesPanel({
         ['Utilidad', mensual.actual.utilidad, mensual.anterior.utilidad],
       ],
       columnasMoneda: [1, 2],
-      congelar: false,
+      sinTotal: true,
     })
 
     return hojas

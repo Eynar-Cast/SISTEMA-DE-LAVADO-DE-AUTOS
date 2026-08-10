@@ -1,4 +1,5 @@
 import { obtenerResumenDashboard } from '@/lib/reportes'
+import { obtenerEstadoAlmacenamiento, formatearBytes } from '@/lib/mantenimiento'
 import { listarCajas } from '@/lib/queries'
 import { formatearMoneda } from '@/lib/format'
 import { Icon } from '@/components/icons'
@@ -7,6 +8,7 @@ import { cardCls, cardHeaderCls, tituloPaginaCls, subtituloCls } from '@/compone
 export default async function DashboardPage() {
   const resumen = await obtenerResumenDashboard()
   const cajas = await listarCajas({ incluirCerradas: false })
+  const almacenamiento = await obtenerEstadoAlmacenamiento()
 
   const fichas = [
     {
@@ -42,10 +44,38 @@ export default async function DashboardPage() {
     },
   ]
 
+  const colorBarra =
+    almacenamiento.nivel === 'critico'
+      ? 'bg-rose-500'
+      : almacenamiento.nivel === 'atencion'
+        ? 'bg-amber-500'
+        : 'bg-emerald-500'
+
+  const antiguedadDias = almacenamiento.auditoriaMasAntigua
+    ? Math.floor((Date.now() - almacenamiento.auditoriaMasAntigua.getTime()) / (1000 * 60 * 60 * 24))
+    : 0
+
   return (
     <div className="max-w-7xl">
       <h1 className={tituloPaginaCls}>Dashboard</h1>
       <p className={subtituloCls}>Resumen del día en tiempo real</p>
+
+      {almacenamiento.nivel !== 'ok' && (
+        <div
+          className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+            almacenamiento.nivel === 'critico'
+              ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300'
+              : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300'
+          }`}
+        >
+          <strong>
+            {almacenamiento.nivel === 'critico' ? 'Atención urgente: ' : 'Aviso: '}
+          </strong>
+          El almacenamiento de la base de datos está al {almacenamiento.porcentaje}% del límite del
+          plan gratuito de Neon. Se recomienda ejecutar la poda de auditoría (registros con más de
+          180 días) desde el servidor: <code>npx ts-node prisma/poda-auditoria.ts</code>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {fichas.map((f) => (
@@ -144,6 +174,31 @@ export default async function DashboardPage() {
               ))}
             </ul>
           )}
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <div className={`${cardCls} p-5`}>
+          <h2 className={cardHeaderCls}>Almacenamiento de la base de datos</h2>
+          <div className="mb-2 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
+            <span>
+              {formatearBytes(almacenamiento.bytesUsados)} de{' '}
+              {formatearBytes(almacenamiento.limiteBytes)} (plan free de Neon)
+            </span>
+            <span className="font-semibold">{almacenamiento.porcentaje}%</span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+            <div
+              className={`h-full ${colorBarra} transition-all`}
+              style={{ width: `${almacenamiento.porcentaje}%` }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {almacenamiento.filasAuditoria.toLocaleString('es-BO')} registros en auditoría
+            {almacenamiento.auditoriaMasAntigua &&
+              ` · el más antiguo tiene ${antiguedadDias} días`}
+            . Se recomienda revisar cuando el uso supere 60%.
+          </p>
         </div>
       </div>
     </div>
