@@ -62,7 +62,6 @@ async function excesoDeIntentosPorIp(ip: string): Promise<boolean> {
 }
 
 export const authOptions: NextAuthOptions = {
-  trustHost: true,
   session: {
     strategy: 'jwt',
     maxAge: 8 * 60 * 60, // 8 horas
