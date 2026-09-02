@@ -51,14 +51,15 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         <div className="mb-6 flex items-center justify-center">
           <div className="relative h-24 w-24 overflow-hidden rounded-full shadow-xl shadow-sky-500/30 ring-4 ring-white/20 dark:ring-white/10">
-            <Image
-              src="/logo-carwash.jpeg"
-              alt="Logo Car Wash"
-              fill
-              sizes="96px"
-              priority
-              className="object-cover"
-            />
+ <Image
+               src="/logo-carwash.jpeg"
+               alt="Logo Car Wash"
+               fill
+               sizes="96px"
+               priority
+               className="object-cover"
+               suppressHydrationWarning
+             />
           </div>
         </div>
 

@@ -37,13 +37,14 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={alternar}
-      title={oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      aria-label={oscuro ? 'Modo claro' : 'Modo oscuro'}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 ${className}`}
-    >
+ <button
+       type="button"
+       onClick={alternar}
+       title={oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+       aria-label={oscuro ? 'Modo claro' : 'Modo oscuro'}
+       className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 ${className}`}
+       suppressHydrationWarning
+     >
       {oscuro ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
