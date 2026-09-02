@@ -2,6 +2,7 @@ import {
   obtenerReporteRango,
   obtenerResumenMensual,
   obtenerDetalleReporte,
+  obtenerDatosCaja,
   fechaDesdeISO,
 } from '@/lib/reportes'
 import { ReportesPanel } from './reportes-panel'
@@ -18,17 +19,18 @@ export default async function ReportesPage({
   const desde = fechaDesdeISO(params.desde) ?? new Date(hoy.getTime() - 30 * 86400000)
   const hasta = fechaDesdeISO(params.hasta) ?? hoy
 
-  const [reporte, detalle, mensual] = await Promise.all([
+  const [reporte, detalle, mensual, datosCaja] = await Promise.all([
     obtenerReporteRango(desde, hasta),
     obtenerDetalleReporte(desde, hasta),
     obtenerResumenMensual(),
+    obtenerDatosCaja(desde, hasta),
   ])
 
   return (
     <div>
       <h1 className={tituloPaginaCls}>Reportes</h1>
       <p className={subtituloCls}>Resumen de ventas, gastos y utilidad del período</p>
-      <ReportesPanel reporte={reporte} detalle={detalle} mensual={mensual} desdeEf={desde} hastaEf={hasta} />
+      <ReportesPanel reporte={reporte} detalle={detalle} mensual={mensual} datosCaja={datosCaja} desdeEf={desde} hastaEf={hasta} />
     </div>
   )
 }

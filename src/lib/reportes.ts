@@ -280,3 +280,61 @@ export async function obtenerResumenMensual(): Promise<ResumenMensual> {
     anterior: { ...anterior, etiqueta: fmt.format(mesAnterior) },
   }
 }
+
+export type DatosCaja = {
+  totalAperturas: number
+  totalCierresReales: number
+  totalEgresos: number
+  totalIngresos: number
+  efectivoEsperado: number
+  diferencia: number
+  cajasAbiertas: number
+}
+
+export async function obtenerDatosCaja(
+  fechaDesde: Date,
+  fechaHasta: Date
+): Promise<DatosCaja> {
+  const desde = inicioDeDia(fechaDesde)
+  const hasta = finDeDia(fechaHasta)
+
+  const [aperturas, cierres, ingresos, egresos] = await Promise.all([
+    prisma.caja.aggregate({
+      where: { fechaApertura: { gte: desde, lte: hasta } },
+      _sum: { montoApertura: true },
+    }),
+    prisma.caja.aggregate({
+      where: { fechaApertura: { gte: desde, lte: hasta }, montoCierreReal: { not: null } },
+      _sum: { montoCierreReal: true },
+    }),
+    prisma.venta.aggregate({
+      where: { fecha: { gte: desde, lte: hasta } },
+      _sum: { total: true },
+    }),
+    prisma.gasto.aggregate({
+      where: { fecha: { gte: desde, lte: hasta }, estado: 'activo' },
+      _sum: { monto: true },
+    }),
+  ])
+
+  const totalAperturas = aperturas._sum.montoApertura?.toNumber() ?? 0
+  const totalCierresReales = cierres._sum.montoCierreReal?.toNumber() ?? 0
+  const totalIngresos = ingresos._sum.total?.toNumber() ?? 0
+  const totalEgresos = egresos._sum.monto?.toNumber() ?? 0
+  const cajasAbiertas = await prisma.caja.count({
+    where: { estado: 'abierta', fechaApertura: { gte: desde, lte: hasta } },
+  })
+
+  const efectivoEsperado = totalAperturas + totalIngresos - totalEgresos
+  const diferencia = totalCierresReales > 0 ? totalCierresReales - efectivoEsperado : 0
+
+  return {
+    totalAperturas,
+    totalCierresReales,
+    totalEgresos,
+    totalIngresos,
+    efectivoEsperado,
+    diferencia,
+    cajasAbiertas,
+  }
+}

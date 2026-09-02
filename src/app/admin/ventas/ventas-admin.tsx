@@ -106,15 +106,27 @@ function badgeEstado(estado: string) {
 
   function exportarPDF() {
     const doc = new jsPDF()
-    const datos = filtradas.length > 0 ? filtradas : ventas
+    const datos = filtradas
+    const totalExport = totalFiltrado
+    const filtroCliente = searchParams.get('cliente')?.trim() ?? ''
+    const filtroPlaca = searchParams.get('placa')?.trim() ?? ''
+    const etiquetaFiltro =
+      filtroCliente || filtroPlaca
+        ? `Filtro: ${[filtroCliente ? `Cliente "${filtroCliente}"` : null, filtroPlaca ? `Placa "${filtroPlaca}"` : null].filter(Boolean).join(' · ')}`
+        : null
 
     doc.setFontSize(16)
     doc.text('Reporte de Ventas', 14, 22)
     doc.setFontSize(10)
     doc.text(`Generado: ${new Date().toLocaleString('es-BO')}`, 14, 30)
-    doc.text(`Total: ${datos.length} ventas · ${formatearMoneda(totalFiltrado)}`, 14, 36)
+    if (etiquetaFiltro) doc.text(etiquetaFiltro, 14, 36)
+    doc.text(
+      `Total: ${datos.length} venta${datos.length !== 1 ? 's' : ''} · ${formatearMoneda(totalExport)}`,
+      14,
+      etiquetaFiltro ? 42 : 36,
+    )
 
-    const inicioY = 44
+    const inicioY = etiquetaFiltro ? 50 : 44
     const columnas = [
       { cabecera: '#', ancho: 14 },
       { cabecera: 'Fecha', ancho: 30 },
@@ -125,34 +137,32 @@ function badgeEstado(estado: string) {
       { cabecera: 'Vendedor', ancho: 22 },
       { cabecera: 'Total', ancho: 22 },
     ]
+    const anchoTotal = columnas.reduce((a, c) => a + c.ancho, 0)
 
-    doc.setFontSize(8)
-    doc.setFillColor(31, 78, 216)
-    doc.setTextColor(255, 255, 255)
-    let xPos = 10
-    columnas.forEach((col) => {
-      doc.rect(xPos, inicioY, col.ancho, 7, 'F')
-      doc.text(col.cabecera, xPos + 1, inicioY + 5)
-      xPos += col.ancho
-    })
+    function pintarCabecera(y: number) {
+      doc.setFontSize(8)
+      doc.setFillColor(31, 78, 216)
+      doc.setTextColor(255, 255, 255)
+      let x = 10
+      columnas.forEach((col) => {
+        doc.rect(x, y, col.ancho, 7, 'F')
+        doc.text(col.cabecera, x + 1, y + 5)
+        x += col.ancho
+      })
+      doc.setTextColor(0, 0, 0)
+    }
 
-    doc.setTextColor(0, 0, 0)
-    datos.forEach((v, i) => {
-      const y = inicioY + 7 + i * 6
-      if (y > 270) {
+    pintarCabecera(inicioY)
+
+    let yActual = inicioY + 7
+    const altoFila = 6
+    datos.forEach((v) => {
+      if (yActual + altoFila > 278) {
         doc.addPage()
-        doc.setFontSize(8)
-        doc.setFillColor(31, 78, 216)
-        doc.setTextColor(255, 255, 255)
-        xPos = 10
-        columnas.forEach((col) => {
-          doc.rect(xPos, inicioY, col.ancho, 7, 'F')
-          doc.text(col.cabecera, xPos + 1, inicioY + 5)
-          xPos += col.ancho
-        })
-        doc.setTextColor(0, 0, 0)
+        pintarCabecera(inicioY)
+        yActual = inicioY + 7
       }
-      xPos = 10
+      let xPos = 10
       const servicios = v.detalleVentas.map((d) => `${d.servicio.nombre} x${d.cantidad}`).join(', ')
       const fila = [
         `#${v.numeroCorrelativo}`,
@@ -164,14 +174,40 @@ function badgeEstado(estado: string) {
         v.usuario.nombre,
         formatearMoneda(v.total),
       ]
-      doc.setFont('normal')
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
       fila.forEach((val, idx) => {
-        doc.text(val.slice(0, 30), xPos + 1, y + 4)
+        doc.text(val.slice(0, 30), xPos + 1, yActual + 4)
         xPos += columnas[idx].ancho
       })
+      yActual += altoFila
     })
 
-    doc.save('reporte-ventas.pdf')
+    if (yActual + 8 > 285) {
+      doc.addPage()
+      pintarCabecera(inicioY)
+      yActual = inicioY + 7
+    }
+    doc.setFillColor(241, 245, 249)
+    doc.rect(10, yActual, anchoTotal, 8, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.text(`TOTAL ACUMULADO  (${datos.length} venta${datos.length !== 1 ? 's' : ''})`, 12, yActual + 5.5)
+    doc.text(formatearMoneda(totalExport), 10 + anchoTotal - 2, yActual + 5.5, { align: 'right' })
+    if (filtroCliente) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(100, 116, 139)
+      doc.text(`Suma total de gastos del cliente "${filtroCliente}" en el período filtrado`, 12, yActual + 11)
+      doc.setTextColor(0, 0, 0)
+    }
+
+    const nombreArchivo = filtroCliente
+      ? `reporte-ventas-${filtroCliente.replace(/\s+/g, '_')}.pdf`
+      : filtroPlaca
+        ? `reporte-ventas-${filtroPlaca}.pdf`
+        : 'reporte-ventas.pdf'
+    doc.save(nombreArchivo)
   }
 
   return (

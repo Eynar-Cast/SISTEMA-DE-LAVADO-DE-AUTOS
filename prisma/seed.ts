@@ -9,17 +9,22 @@ async function main() {
     skipDuplicates: true,
   })
 
-  await prisma.categoriaGasto.createMany({
-    data: [
-      { nombre: 'Materiales' },
-      { nombre: 'Almuerzos' },
-      { nombre: 'Pasajes' },
-      { nombre: 'Mantenimiento' },
-      { nombre: 'Servicios Básicos' },
-      { nombre: 'Otros' },
-    ],
-    skipDuplicates: true,
-  })
+  const categorias = [
+    'Materiales',
+    'Almuerzos',
+    'Pasajes',
+    'Mantenimiento',
+    'Servicios Básicos',
+    'Otros',
+  ]
+
+  for (const nombre of categorias) {
+    await prisma.categoriaGasto.upsert({
+      where: { nombre },
+      update: {},
+      create: { nombre },
+    })
+  }
 
   await prisma.servicio.createMany({
     data: [

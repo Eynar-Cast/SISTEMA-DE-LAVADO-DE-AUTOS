@@ -7,6 +7,7 @@ const enlaces = [
   { href: '/admin/servicios', nombre: 'Servicios', icono: 'servicio' },
   { href: '/admin/ventas', nombre: 'Ventas', icono: 'ventas' },
   { href: '/admin/gastos', nombre: 'Gastos', icono: 'gastos' },
+  { href: '/admin/categorias-gasto', nombre: 'Categorías de gasto', icono: 'gastos' },
   { href: '/admin/usuarios', nombre: 'Usuarios', icono: 'usuarios' },
   { href: '/admin/reportes', nombre: 'Reportes', icono: 'reportes' },
 ]

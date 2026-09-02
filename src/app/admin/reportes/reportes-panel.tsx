@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { ReporteRango, ResumenMensual, DetalleReporte } from '@/lib/reportes'
+import type { ReporteRango, ResumenMensual, DetalleReporte, DatosCaja } from '@/lib/reportes'
 import {
   formatearMoneda,
   formatearFecha,
@@ -39,12 +39,14 @@ export function ReportesPanel({
   reporte,
   detalle,
   mensual,
+  datosCaja,
   desdeEf,
   hastaEf,
 }: {
   reporte: ReporteRango
   detalle: DetalleReporte
   mensual: ResumenMensual
+  datosCaja: DatosCaja
   desdeEf: Date
   hastaEf: Date
 }) {
@@ -274,6 +276,38 @@ export function ReportesPanel({
       sinTotal: true,
     })
 
+    hojas.push({
+      nombre: 'Control de caja',
+      prefacio: [
+        ['Control de caja — detalle del período'],
+        ['Período', `${fechaLegibleDesdeISO(aplicado.desde) || fechaCorta(desdeEf)} — ${fechaLegibleDesdeISO(aplicado.hasta) || fechaCorta(hastaEf)}`],
+        [],
+        ['NOTAS:'],
+        ['• El monto de apertura (caja chica / fondo inicial) NO es un ingreso. Es el efectivo con el que se abre la caja.'],
+        ['• Efectivo esperado = Σ aperturas + ingresos por ventas – egresos (gastos activos).'],
+        ['• Diferencia = cierre real contado – efectivo esperado. Valores negativos indican faltante; positivos, sobrante.'],
+        ['• Solo cajas con fecha de apertura dentro del rango se consideran. Cajas aún abiertas no aportan cierre real.'],
+        [],
+      ],
+      bloques: [
+        {
+          titulo: 'Flujo de caja del período',
+          encabezados: ['Concepto', 'Valor'],
+          filas: [
+            ['Σ montos de apertura (fondo inicial)', datosCaja.totalAperturas],
+            ['Ingresos por ventas', datosCaja.totalIngresos],
+            ['Egresos por gastos', datosCaja.totalEgresos],
+            ['Efectivo esperado en caja', datosCaja.efectivoEsperado],
+            ['Σ cierres reales contados', datosCaja.totalCierresReales],
+            ['Diferencia (real – esperado)', datosCaja.diferencia],
+            ['Cajas aún abiertas en el período', datosCaja.cajasAbiertas],
+          ],
+          columnasMoneda: [1],
+          sinTotal: true,
+        },
+      ],
+    })
+
     return hojas
   }
 
@@ -478,6 +512,54 @@ export function ReportesPanel({
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <div className={`${cardCls} p-5`}>
+        <h2 className={cardHeaderCls}>Control de caja del período</h2>
+        <p className="mb-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          El <span className="font-semibold">monto de apertura</span> es caja chica (fondo inicial) y <span className="font-semibold">no</span> se cuenta como ingreso.
+          Efectivo esperado = Σ aperturas + ingresos − egresos. Diferencia = cierre real − esperado.
+        </p>
+        <div className="overflow-x-auto">
+          <table className={`${tablaCls} min-w-[520px]`}>
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-700/40">
+                <th className={thCls}>Concepto</th>
+                <th className={`${thCls} text-right`}>Valor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tr className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                <td className={tdCls}>Σ montos de apertura (fondo inicial)</td>
+                <td className={`${tdCls} text-right font-medium`}>{formatearMoneda(datosCaja.totalAperturas)}</td>
+              </tr>
+              <tr className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                <td className={tdCls}>Ingresos por ventas</td>
+                <td className={`${tdCls} text-right font-medium`}>{formatearMoneda(datosCaja.totalIngresos)}</td>
+              </tr>
+              <tr className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                <td className={tdCls}>Egresos por gastos</td>
+                <td className={`${tdCls} text-right font-medium`}>{formatearMoneda(datosCaja.totalEgresos)}</td>
+              </tr>
+              <tr className="bg-slate-50 font-semibold dark:bg-slate-700/40">
+                <td className={tdCls}>Efectivo esperado en caja</td>
+                <td className={`${tdCls} text-right`}>{formatearMoneda(datosCaja.efectivoEsperado)}</td>
+              </tr>
+              <tr className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                <td className={tdCls}>Σ cierres reales contados</td>
+                <td className={`${tdCls} text-right font-medium`}>{formatearMoneda(datosCaja.totalCierresReales)}</td>
+              </tr>
+              <tr className={datosCaja.diferencia === 0 ? 'transition hover:bg-slate-50 dark:hover:bg-slate-700/40' : datosCaja.diferencia > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-rose-50 dark:bg-rose-950/30'}>
+                <td className={tdCls}>Diferencia (real − esperado)</td>
+                <td className={`${tdCls} text-right font-bold ${datosCaja.diferencia === 0 ? '' : datosCaja.diferencia > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>{formatearMoneda(datosCaja.diferencia)}</td>
+              </tr>
+              <tr className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                <td className={tdCls}>Cajas aún abiertas en el período</td>
+                <td className={`${tdCls} text-right font-medium`}>{datosCaja.cajasAbiertas}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
