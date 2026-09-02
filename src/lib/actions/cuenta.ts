@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { obtenerSesion, obtenerIp } from '@/lib/session'
+import { obtenerSesion } from '@/lib/session'
 import { manejarError } from '@/lib/errores'
 import { esquemaContrasena } from '@/lib/password'
 
@@ -24,7 +24,6 @@ export async function cambiarMiContrasena(input: {
     if (!usuario) return { ok: false, error: 'No autorizado: inicie sesión' }
 
     const datos = schemaCambio.parse(input)
-    const ip = await obtenerIp()
 
     const actual = await prisma.usuario.findUnique({
       where: { id: usuario.id },
@@ -46,16 +45,6 @@ export async function cambiarMiContrasena(input: {
       await tx.usuario.update({
         where: { id: usuario.id },
         data: { passwordHash: nuevaPasswordHash, debeCambiarPassword: false },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion: 'cambio_contrasena',
-          tablaAfectada: 'usuarios',
-          valoresAnteriores: undefined,
-          valoresNuevos: { email: usuario.email },
-          ip,
-        },
       })
     })
 

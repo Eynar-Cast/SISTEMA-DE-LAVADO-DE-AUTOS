@@ -9,7 +9,6 @@ const enlaces = [
   { href: '/admin/gastos', nombre: 'Gastos', icono: 'gastos' },
   { href: '/admin/usuarios', nombre: 'Usuarios', icono: 'usuarios' },
   { href: '/admin/reportes', nombre: 'Reportes', icono: 'reportes' },
-  { href: '/admin/auditoria', nombre: 'Auditoría', icono: 'auditoria' },
 ]
 
 export default async function AdminLayout({

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { signIn } from 'next-auth/react'
-import { Icon } from '@/components/icons'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { btnPrimarioCls, inputCls } from '@/components/ui'
 
@@ -49,9 +49,16 @@ export default function LoginPage() {
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-500 shadow-xl shadow-sky-500/30 dark:from-sky-500 dark:to-cyan-400">
-            <Icon nombre="servicio" className="h-8 w-8 text-white" />
+        <div className="mb-6 flex items-center justify-center">
+          <div className="relative h-24 w-24 overflow-hidden rounded-full shadow-xl shadow-sky-500/30 ring-4 ring-white/20 dark:ring-white/10">
+            <Image
+              src="/logo-carwash.jpeg"
+              alt="Logo Car Wash"
+              fill
+              sizes="96px"
+              priority
+              className="object-cover"
+            />
           </div>
         </div>
 

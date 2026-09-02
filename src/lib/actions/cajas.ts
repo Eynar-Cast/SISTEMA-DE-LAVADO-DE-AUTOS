@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requerirCaja, obtenerIp } from '@/lib/session'
+import { requerirCaja } from '@/lib/session'
 import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 import { Prisma } from '@prisma/client'
 
@@ -33,7 +33,6 @@ export async function abrirCaja(montoApertura: number): Promise<CajaResult> {
   try {
     const usuario = await requerirCaja()
     const { montoApertura: monto } = schemaApertura.parse({ montoApertura })
-    const ip = await obtenerIp()
 
     const resultado = await prisma.$transaction(
       async (tx) => {
@@ -54,16 +53,6 @@ export async function abrirCaja(montoApertura: number): Promise<CajaResult> {
 
         const creada = await tx.caja.create({
           data: { usuarioId: usuario.id, montoApertura: monto, estado: 'abierta' },
-        })
-        await tx.auditoria.create({
-          data: {
-            usuarioId: usuario.id,
-            accion: 'apertura_caja',
-            tablaAfectada: 'cajas',
-            valoresAnteriores: undefined,
-            valoresNuevos: { id: creada.id, montoApertura: monto },
-            ip,
-          },
         })
         return { yaAbierta: false, cajaId: creada.id }
       },
@@ -93,7 +82,6 @@ export async function cerrarCaja(montoCierreReal: number): Promise<CierreResult>
   try {
     const usuario = await requerirCaja()
     const { montoCierreReal: montoReal } = schemaCierre.parse({ montoCierreReal })
-    const ip = await obtenerIp()
 
     const caja = await prisma.caja.findFirst({
       where: { usuarioId: usuario.id, estado: 'abierta' },
@@ -132,7 +120,7 @@ export async function cerrarCaja(montoCierreReal: number): Promise<CierreResult>
         const sistema = caja.montoApertura.toNumber() + ingresosEfectivo - egresos
         const diferencia = montoReal - sistema
 
-        const cerrada = await tx.caja.update({
+        await tx.caja.update({
           where: { id: caja.id },
           data: {
             estado: 'cerrada',
@@ -140,23 +128,6 @@ export async function cerrarCaja(montoCierreReal: number): Promise<CierreResult>
             montoCierreSistema: sistema,
             montoCierreReal: montoReal,
             diferencia,
-          },
-        })
-
-        await tx.auditoria.create({
-          data: {
-            usuarioId: usuario.id,
-            accion: 'cierre_caja',
-            tablaAfectada: 'cajas',
-            valoresAnteriores: { estado: caja.estado },
-            valoresNuevos: {
-              id: cerrada.id,
-              estado: cerrada.estado,
-              montoCierreSistema: sistema,
-              montoCierreReal: montoReal,
-              diferencia,
-            },
-            ip,
           },
         })
 

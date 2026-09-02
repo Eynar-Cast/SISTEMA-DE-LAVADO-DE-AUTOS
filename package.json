@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "test:estres": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/test-estres.ts",
-    "poda:auditoria": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/poda-auditoria.ts"
+    "test:estres": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/test-estres.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

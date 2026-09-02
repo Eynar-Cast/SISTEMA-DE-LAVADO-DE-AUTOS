@@ -96,14 +96,6 @@ async function main() {
             precioAplicado: servicio.precio,
           },
         })
-        await tx.auditoria.create({
-          data: {
-            usuarioId: usuario.id,
-            accion: 'registrar_venta',
-            tablaAfectada: 'ventas',
-            valoresNuevos: { ventaId: venta.id, numeroCorrelativo, cajaId: caja.id },
-          },
-        })
         corrRecord.push(numeroCorrelativo)
         return numeroCorrelativo
       },
@@ -150,23 +142,7 @@ async function main() {
     where: { id: aAnular.id },
     data: { estado: 'pendiente_autorizacion' },
   })
-  await prisma.auditoria.create({
-    data: {
-      usuarioId: usuario.id,
-      accion: 'solicitar_anulacion_gasto',
-      tablaAfectada: 'gastos',
-      valoresNuevos: { id: aAnular.id, estado: 'pendiente_autorizacion' },
-    },
-  })
   await prisma.gasto.update({ where: { id: aAnular.id }, data: { estado: 'anulado' } })
-  await prisma.auditoria.create({
-    data: {
-      usuarioId: rolAdmin.id,
-      accion: 'autorizar_anulacion_gasto',
-      tablaAfectada: 'gastos',
-      valoresNuevos: { id: aAnular.id, estado: 'anulado' },
-    },
-  })
 
   // 5. Cierre de caja / arqueo
   const ventasEfectivo = await prisma.venta.aggregate({
@@ -227,7 +203,6 @@ async function main() {
       const idsVentas = (await tx.venta.findMany({ where: { cajaId: { in: idsCajas } }, select: { id: true } })).map((v) => v.id)
       const idsGastos = (await tx.gasto.findMany({ where: { cajaId: { in: idsCajas } }, select: { id: true } })).map((g) => g.id)
       await tx.detalleVenta.deleteMany({ where: { ventaId: { in: idsVentas } } })
-      await tx.auditoria.deleteMany({ where: { usuarioId: usuario!.id } })
       await tx.gasto.deleteMany({ where: { id: { in: idsGastos } } })
       await tx.venta.deleteMany({ where: { id: { in: idsVentas } } })
       await tx.caja.deleteMany({ where: { id: { in: idsCajas } } })

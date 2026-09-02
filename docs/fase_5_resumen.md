@@ -19,11 +19,10 @@
 | 8 | Headers de seguridad | ✅ CSP, HSTS, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy |
 | 9 | Sanitización de errores | ✅ `manejarError()` no filtra detalles internos de Prisma/BD |
 | 10 | Política de contraseña fuerte | ✅ mín. 8, mayúscula, minúscula y número; validada con Zod compartido |
-| 11 | Cambio forzado de contraseñas temporales | ✅ campo `debe_cambiar_password` + página `/cambiar-contrasena` + auditoría |
+| 11 | Cambio forzado de contraseñas temporales | ✅ campo `debe_cambiar_password` + página `/cambiar-contrasena` |
 | 12 | Protección CSV-injection | ✅ celdas que empiezan con `= + - @` se neutralizan al exportar |
-| 13 | Auditoría sin endpoints de borrado/edición | ✅ tabla append-only; solo script de mantenimiento `poda-auditoria.ts` |
-| 14 | Último admin no puede ser degradado/desactivado | ✅ guardas en `usuarios.ts` |
-| 15 | `.env` fuera de Git, `.env.example` documentado | ✅ `.gitignore` + `!.env.example` |
+| 13 | Último admin no puede ser degradado/desactivado | ✅ guardas en `usuarios.ts` |
+| 14 | `.env` fuera de Git, `.env.example` documentado | ✅ `.gitignore` + `!.env.example` |
 
 ## 2. Pruebas de estrés operativo (ejecutadas ✅)
 
@@ -49,9 +48,6 @@ Sugerencia operativa: en Neon, limitar la concurrencia del pool (usar `--lotes=5
 ## 4. Mantenimiento
 
 ```bash
-# Poda de auditoría (por defecto elimina registros > 180 días)
-npm run poda:auditoria -- 180
-
 # Prueba de estrés
 npm run test:estres -- --ventas=25 --gastos=5 --lotes=5
 ```

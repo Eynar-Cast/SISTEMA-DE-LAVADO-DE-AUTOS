@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { requerirAdmin, obtenerIp } from '@/lib/session'
+import { requerirAdmin } from '@/lib/session'
 import { manejarError } from '@/lib/errores'
 import { esquemaContrasena } from '@/lib/password'
 
@@ -45,9 +45,8 @@ export async function crearUsuario(input: {
   rolId: number
 }): Promise<UsuarioResult> {
   try {
-    const admin = await requerirAdmin()
+    await requerirAdmin()
     const datos = schemaCrear.parse(input)
-    const ip = await obtenerIp()
 
     const existe = await prisma.usuario.findUnique({ where: { email: datos.email } })
     if (existe) return { ok: false, error: 'Ya existe un usuario con ese email' }
@@ -55,7 +54,7 @@ export async function crearUsuario(input: {
     const passwordHash = await bcrypt.hash(datos.password, 10)
 
     await prisma.$transaction(async (tx) => {
-      const creado = await tx.usuario.create({
+      await tx.usuario.create({
         data: {
           nombre: datos.nombre,
           email: datos.email,
@@ -63,16 +62,6 @@ export async function crearUsuario(input: {
           rolId: datos.rolId,
           estado: 'activo',
           debeCambiarPassword: true,
-        },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: admin.id,
-          accion: 'crear_usuario',
-          tablaAfectada: 'usuarios',
-          valoresAnteriores: undefined,
-          valoresNuevos: { id: creado.id, nombre: creado.nombre, email: creado.email, rolId: creado.rolId },
-          ip,
         },
       })
     })
@@ -92,7 +81,6 @@ export async function actualizarUsuario(
     const admin = await requerirAdmin()
     schemaUsuarioId.parse({ id })
     const datos = schemaEditar.parse(input)
-    const ip = await obtenerIp()
 
     const anterior = await prisma.usuario.findUnique({
       where: { id },
@@ -129,31 +117,13 @@ export async function actualizarUsuario(
     const passwordHash = datos.password ? await bcrypt.hash(datos.password, 10) : undefined
 
     await prisma.$transaction(async (tx) => {
-      const actualizado = await tx.usuario.update({
+      await tx.usuario.update({
         where: { id },
         data: {
           nombre: datos.nombre,
           email: datos.email,
           rolId: datos.rolId,
           ...(passwordHash ? { passwordHash, debeCambiarPassword: true } : {}),
-        },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: admin.id,
-          accion: 'editar_usuario',
-          tablaAfectada: 'usuarios',
-          valoresAnteriores: {
-            nombre: anterior.nombre,
-            email: anterior.email,
-            rolId: anterior.rolId,
-          },
-          valoresNuevos: {
-            nombre: actualizado.nombre,
-            email: actualizado.email,
-            rolId: actualizado.rolId,
-          },
-          ip,
         },
       })
     })
@@ -176,7 +146,6 @@ export async function cambiarEstadoUsuario(
     if (admin.id === id) {
       return { ok: false, error: 'No puede desactivar su propio usuario' }
     }
-    const ip = await obtenerIp()
 
     const anterior = await prisma.usuario.findUnique({
       where: { id },
@@ -194,20 +163,7 @@ export async function cambiarEstadoUsuario(
     }
 
     await prisma.$transaction(async (tx) => {
-      const actualizado = await tx.usuario.update({ where: { id }, data: { estado } })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: admin.id,
-          accion: estado === 'activo' ? 'activar_usuario' : 'desactivar_usuario',
-          tablaAfectada: 'usuarios',
-          valoresAnteriores: { estado: anterior.estado, email: anterior.email },
-          valoresNuevos: {
-            estado: actualizado.estado,
-            email: actualizado.email,
-          },
-          ip,
-        },
-      })
+      await tx.usuario.update({ where: { id }, data: { estado } })
     })
 
     revalidatePath('/admin/usuarios')

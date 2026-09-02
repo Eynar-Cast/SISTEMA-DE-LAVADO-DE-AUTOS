@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requerirAdmin, obtenerIp } from '@/lib/session'
+import { requerirAdmin } from '@/lib/session'
 import { manejarError } from '@/lib/errores'
 
 const schemaServicio = z.object({
@@ -31,27 +31,12 @@ export async function crearServicio(input: {
   precio: number
 }): Promise<ServicioResult> {
   try {
-    const usuario = await requerirAdmin()
+    await requerirAdmin()
     const datos = schemaServicio.parse(input)
-    const ip = await obtenerIp()
 
     await prisma.$transaction(async (tx) => {
-      const creado = await tx.servicio.create({
+      await tx.servicio.create({
         data: { nombre: datos.nombre, precio: datos.precio },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion: 'crear_servicio',
-          tablaAfectada: 'servicios',
-          valoresAnteriores: undefined,
-          valoresNuevos: {
-            id: creado.id,
-            nombre: creado.nombre,
-            precio: creado.precio.toString(),
-          },
-          ip,
-        },
       })
     })
 
@@ -68,34 +53,17 @@ export async function actualizarServicio(
   input: { nombre: string; precio: number }
 ): Promise<ServicioResult> {
   try {
-    const usuario = await requerirAdmin()
+    await requerirAdmin()
     schemaIdServicio.parse({ id })
     const datos = schemaServicio.parse(input)
-    const ip = await obtenerIp()
 
     const anterior = await prisma.servicio.findUnique({ where: { id } })
     if (!anterior) return { ok: false, error: 'Servicio no encontrado' }
 
     await prisma.$transaction(async (tx) => {
-      const editado = await tx.servicio.update({
+      await tx.servicio.update({
         where: { id },
         data: { nombre: datos.nombre, precio: datos.precio },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion: 'editar_servicio',
-          tablaAfectada: 'servicios',
-          valoresAnteriores: {
-            nombre: anterior.nombre,
-            precio: anterior.precio.toString(),
-          },
-          valoresNuevos: {
-            nombre: editado.nombre,
-            precio: editado.precio.toString(),
-          },
-          ip,
-        },
       })
     })
 
@@ -112,28 +80,17 @@ export async function cambiarEstadoServicio(
   estado: 'activo' | 'inactivo'
 ): Promise<ServicioResult> {
   try {
-    const usuario = await requerirAdmin()
+    await requerirAdmin()
     schemaIdServicio.parse({ id })
     schemaEstado.parse({ estado })
-    const ip = await obtenerIp()
 
     const anterior = await prisma.servicio.findUnique({ where: { id } })
     if (!anterior) return { ok: false, error: 'Servicio no encontrado' }
 
     await prisma.$transaction(async (tx) => {
-      const editado = await tx.servicio.update({
+      await tx.servicio.update({
         where: { id },
         data: { estado },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion: estado === 'activo' ? 'activar_servicio' : 'desactivar_servicio',
-          tablaAfectada: 'servicios',
-          valoresAnteriores: { estado: anterior.estado },
-          valoresNuevos: { estado: editado.estado, nombre: editado.nombre },
-          ip,
-        },
       })
     })
 

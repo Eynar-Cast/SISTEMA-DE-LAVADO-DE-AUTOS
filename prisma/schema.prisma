@@ -25,11 +25,10 @@ model Usuario {
   debeCambiarPassword  Boolean  @default(false) @map("debe_cambiar_password")
   createdAt            DateTime @default(now()) @map("created_at")
 
-  rol        Rol         @relation(fields: [rolId], references: [id])
+  rol        Rol     @relation(fields: [rolId], references: [id])
   cajas      Caja[]
   ventas     Venta[]
   gastos     Gasto[]
-  auditorias Auditoria[]
 
   @@map("usuarios")
 }
@@ -129,19 +128,3 @@ model Gasto {
   @@map("gastos")
 }
 
-model Auditoria {
-  id                Int      @id @default(autoincrement())
-  usuarioId         Int      @map("usuario_id")
-  accion            String
-  tablaAfectada     String   @map("tabla_afectada")
-  valoresAnteriores Json?    @map("valores_anteriores")
-  valoresNuevos     Json?    @map("valores_nuevos")
-  ip                String?
-  timestamp         DateTime @default(now())
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-
-  @@index([usuarioId])
-  @@index([timestamp])
-  @@map("auditoria")
-}

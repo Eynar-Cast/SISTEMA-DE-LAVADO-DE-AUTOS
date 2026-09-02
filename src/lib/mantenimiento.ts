@@ -8,8 +8,6 @@ export type EstadoAlmacenamiento = {
   limiteBytes: number
   porcentaje: number
   nivel: 'ok' | 'atencion' | 'critico'
-  filasAuditoria: number
-  auditoriaMasAntigua: Date | null
 }
 
 export async function obtenerEstadoAlmacenamiento(): Promise<EstadoAlmacenamiento> {
@@ -18,14 +16,6 @@ export async function obtenerEstadoAlmacenamiento(): Promise<EstadoAlmacenamient
   `
   const bytesUsados = Number(resultado[0]?.bytes ?? 0)
   const porcentaje = Math.min(100, Math.round((bytesUsados / LIMITE_BYTES_FREE) * 1000) / 10)
-
-  const [filasAuditoria, masAntigua] = await Promise.all([
-    prisma.auditoria.count(),
-    prisma.auditoria.findFirst({
-      orderBy: { timestamp: 'asc' },
-      select: { timestamp: true },
-    }),
-  ])
 
   let nivel: EstadoAlmacenamiento['nivel'] = 'ok'
   if (porcentaje >= 85) nivel = 'critico'
@@ -36,8 +26,6 @@ export async function obtenerEstadoAlmacenamiento(): Promise<EstadoAlmacenamient
     limiteBytes: LIMITE_BYTES_FREE,
     porcentaje,
     nivel,
-    filasAuditoria,
-    auditoriaMasAntigua: masAntigua?.timestamp ?? null,
   }
 }
 

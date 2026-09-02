@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requerirAdmin, requerirCaja, obtenerIp } from '@/lib/session'
+import { requerirAdmin, requerirCaja } from '@/lib/session'
 import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 
 const schemaRegistro = z.object({
@@ -35,7 +35,6 @@ export async function registrarGasto(input: {
   try {
     const usuario = await requerirCaja()
     const datos = schemaRegistro.parse(input)
-    const ip = await obtenerIp()
 
     const caja = await prisma.caja.findFirst({
       where: { usuarioId: usuario.id, estado: 'abierta' },
@@ -67,21 +66,6 @@ export async function registrarGasto(input: {
           motivo: datos.motivo,
         },
       })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion: 'registrar_gasto',
-          tablaAfectada: 'gastos',
-          valoresAnteriores: undefined,
-          valoresNuevos: {
-            id: creado.id,
-            cajaId: caja.id,
-            monto: creado.monto.toString(),
-            motivo: creado.motivo,
-          },
-          ip,
-        },
-      })
       return creado
     })
 
@@ -100,7 +84,6 @@ export async function solicitarAnulacionGasto(gastoId: number): Promise<Anulacio
   try {
     const usuario = await requerirCaja()
     schemaGastoId.parse({ gastoId })
-    const ip = await obtenerIp()
 
     const gasto = await prisma.gasto.findUnique({
       where: { id: gastoId },
@@ -119,8 +102,6 @@ export async function solicitarAnulacionGasto(gastoId: number): Promise<Anulacio
     }
 
     const estadoDestino = usuario.rol === 'Administrador' ? 'anulado' : 'pendiente_autorizacion'
-    const accion =
-      usuario.rol === 'Administrador' ? 'anular_gasto' : 'solicitar_anulacion_gasto'
 
     await prisma.$transaction(async (tx) => {
       const rowsCaja = await tx.$queryRaw<{ id: number; estado: string }[]>`
@@ -130,23 +111,9 @@ export async function solicitarAnulacionGasto(gastoId: number): Promise<Anulacio
         throw new ErrorDeNegocio('La caja se cerró, no se puede anular el gasto')
       }
 
-      const actualizado = await tx.gasto.update({
+      await tx.gasto.update({
         where: { id: gasto.id },
         data: { estado: estadoDestino },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion,
-          tablaAfectada: 'gastos',
-          valoresAnteriores: { estado: gasto.estado },
-          valoresNuevos: {
-            id: actualizado.id,
-            estado: actualizado.estado,
-            solicitante: usuario.nombre,
-          },
-          ip,
-        },
       })
     })
 
@@ -164,10 +131,9 @@ export async function resolverAnulacionGasto(
   aprobar: boolean
 ): Promise<AnulacionResult> {
   try {
-    const admin = await requerirAdmin()
+    await requerirAdmin()
     schemaGastoId.parse({ gastoId })
     schemaResolver.parse({ aprobar })
-    const ip = await obtenerIp()
 
     const gasto = await prisma.gasto.findUnique({ where: { id: gastoId } })
     if (!gasto) return { ok: false, error: 'Gasto no encontrado' }
@@ -176,26 +142,11 @@ export async function resolverAnulacionGasto(
     }
 
     const estadoDestino = aprobar ? 'anulado' : 'activo'
-    const accion = aprobar ? 'autorizar_anulacion_gasto' : 'rechazar_anulacion_gasto'
 
     await prisma.$transaction(async (tx) => {
-      const actualizado = await tx.gasto.update({
+      await tx.gasto.update({
         where: { id: gasto.id },
         data: { estado: estadoDestino },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: admin.id,
-          accion,
-          tablaAfectada: 'gastos',
-          valoresAnteriores: { estado: gasto.estado },
-          valoresNuevos: {
-            id: actualizado.id,
-            estado: actualizado.estado,
-            autorizadoPor: admin.nombre,
-          },
-          ip,
-        },
       })
     })
 

@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requerirCaja, obtenerIp } from '@/lib/session'
+import { requerirCaja } from '@/lib/session'
 import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 import { Prisma } from '@prisma/client'
 
@@ -41,7 +41,6 @@ export async function registrarVenta(input: {
   try {
     const usuario = await requerirCaja()
     const datos = schemaVenta.parse(input)
-    const ip = await obtenerIp()
 
     const caja = await prisma.caja.findFirst({
       where: { usuarioId: usuario.id, estado: 'abierta' },
@@ -105,23 +104,6 @@ export async function registrarVenta(input: {
         )
         await tx.detalleVenta.createMany({ data: detalleData })
 
-        await tx.auditoria.create({
-          data: {
-            usuarioId: usuario.id,
-            accion: 'registrar_venta',
-            tablaAfectada: 'ventas',
-            valoresAnteriores: undefined,
-            valoresNuevos: {
-              ventaId: venta.id,
-              numeroCorrelativo,
-              cajaId: caja.id,
-              total,
-              metodoPago: datos.metodoPago,
-            },
-            ip,
-          },
-        })
-
         return { ventaId: venta.id, numeroCorrelativo }
       },
       {
@@ -147,7 +129,6 @@ export async function cambiarEstadoVenta(
   try {
     const usuario = await requerirCaja()
     const datos = schemaEstado.parse({ ventaId, estado })
-    const ip = await obtenerIp()
 
     const venta = await prisma.venta.findUnique({
       where: { id: datos.ventaId },
@@ -180,19 +161,9 @@ export async function cambiarEstadoVenta(
         throw new ErrorDeNegocio('La caja se cerró, no se puede modificar la venta')
       }
 
-      const actualizada = await tx.venta.update({
+      await tx.venta.update({
         where: { id: venta.id },
         data: { estadoVehiculo: datos.estado },
-      })
-      await tx.auditoria.create({
-        data: {
-          usuarioId: usuario.id,
-          accion: 'cambio_estado_venta',
-          tablaAfectada: 'ventas',
-          valoresAnteriores: { estadoVehiculo: estadoActual },
-          valoresNuevos: { id: actualizada.id, estadoVehiculo: actualizada.estadoVehiculo },
-          ip,
-        },
       })
     })
 
