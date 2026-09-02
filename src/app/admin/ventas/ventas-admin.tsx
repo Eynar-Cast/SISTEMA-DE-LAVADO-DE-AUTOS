@@ -127,17 +127,28 @@ function badgeEstado(estado: string) {
     )
 
     const inicioY = etiquetaFiltro ? 50 : 44
+    // Anchos suman 190mm = ancho útil A4 (210 - margen 10+10). Antes sumaban 208 y se desbordaba a la derecha.
     const columnas = [
-      { cabecera: '#', ancho: 14 },
-      { cabecera: 'Fecha', ancho: 30 },
-      { cabecera: 'Cliente', ancho: 30 },
-      { cabecera: 'Placa', ancho: 20 },
-      { cabecera: 'Servicios', ancho: 50 },
-      { cabecera: 'Método', ancho: 20 },
+      { cabecera: '#', ancho: 10 },
+      { cabecera: 'Fecha', ancho: 22 },
+      { cabecera: 'Cliente', ancho: 26 },
+      { cabecera: 'Placa', ancho: 18 },
+      { cabecera: 'Servicios', ancho: 52 },
+      { cabecera: 'Método', ancho: 18 },
       { cabecera: 'Vendedor', ancho: 22 },
       { cabecera: 'Total', ancho: 22 },
     ]
     const anchoTotal = columnas.reduce((a, c) => a + c.ancho, 0)
+
+    function ajustarTexto(texto: string, anchoMax: number): string {
+      const t = texto ?? ''
+      if (doc.getTextWidth(t) <= anchoMax - 2) return t
+      let recortado = t
+      while (recortado.length > 0 && doc.getTextWidth(recortado + '…') > anchoMax - 2) {
+        recortado = recortado.slice(0, -1)
+      }
+      return recortado + '…'
+    }
 
     function pintarCabecera(y: number) {
       doc.setFontSize(8)
@@ -169,16 +180,23 @@ function badgeEstado(estado: string) {
         formatearFecha(v.fecha),
         v.cliente ?? '-',
         v.placa ?? '-',
-        servicios.slice(0, 40),
+        servicios,
         TEXTO_METODO_PAGO[v.metodoPago] ?? v.metodoPago,
         v.usuario.nombre,
         formatearMoneda(v.total),
       ]
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8)
+      doc.setFontSize(7)
       fila.forEach((val, idx) => {
-        doc.text(val.slice(0, 30), xPos + 1, yActual + 4)
-        xPos += columnas[idx].ancho
+        const anchoCol = columnas[idx].ancho
+        const textoAjustado = ajustarTexto(val, anchoCol)
+        const alignRight = idx === columnas.length - 1
+        if (alignRight) {
+          doc.text(textoAjustado, xPos + anchoCol - 1, yActual + 4, { align: 'right' })
+        } else {
+          doc.text(textoAjustado, xPos + 1, yActual + 4)
+        }
+        xPos += anchoCol
       })
       yActual += altoFila
     })
