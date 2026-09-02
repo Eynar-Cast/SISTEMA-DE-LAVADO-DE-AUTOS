@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requerirCaja, obtenerIp } from '@/lib/session'
+import { requerirCaja } from '@/lib/session'
 import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 import { Prisma } from '@prisma/client'
 
@@ -45,7 +45,6 @@ export async function registrarVenta(input: {
   try {
     const usuario = await requerirCaja()
     const { servicios: itemsServicio, metodoPago, cliente, placa } = schemaVenta.parse(input)
-    const ip = await obtenerIp()
 
     const caja = await prisma.caja.findFirst({
       where: { usuarioId: usuario.id, estado: 'abierta' },
@@ -109,23 +108,6 @@ export async function registrarVenta(input: {
           })
         )
         await tx.detalleVenta.createMany({ data: detalleData })
-
-        await tx.auditoria.create({
-          data: {
-            usuarioId: usuario.id,
-            accion: 'registrar_venta',
-            tablaAfectada: 'ventas',
-            valoresAnteriores: undefined,
-            valoresNuevos: {
-              ventaId: venta.id,
-              numeroCorrelativo,
-              cajaId: caja.id,
-              total,
-              metodoPago,
-            },
-            ip,
-          },
-        })
 
         return { ventaId: venta.id, numeroCorrelativo }
       },
