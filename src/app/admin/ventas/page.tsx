@@ -8,7 +8,13 @@ const ORDENES_VALIDAS: OrdenVentas[] = ['fecha_desc', 'fecha_asc', 'correlativo_
 export default async function AdminVentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ desde?: string; hasta?: string; orden?: string }>
+  searchParams: Promise<{
+    desde?: string
+    hasta?: string
+    orden?: string
+    cliente?: string
+    placa?: string
+  }>
 }) {
   const params = await searchParams
   const desde = fechaDesdeISO(params.desde) ?? undefined
@@ -16,8 +22,16 @@ export default async function AdminVentasPage({
   const orden: OrdenVentas = ORDENES_VALIDAS.includes(params.orden as OrdenVentas)
     ? (params.orden as OrdenVentas)
     : 'fecha_desc'
+  const cliente = params.cliente ?? undefined
+  const placa = params.placa ?? undefined
 
-  const ventas = await listarVentas({ fechaDesde: desde, fechaHasta: hasta, orden })
+  const ventas = await listarVentas({
+    fechaDesde: desde,
+    fechaHasta: hasta,
+    orden,
+    cliente,
+    placa,
+  })
 
   return (
     <div>

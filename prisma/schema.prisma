@@ -73,6 +73,8 @@ model Venta {
   estadoVehiculo    String   @default("registrado") @map("estado_vehiculo")
   metodoPago        String   @map("metodo_pago")
   total             Decimal  @db.Decimal(10, 2)
+  cliente           String?  @map("cliente")
+  placa             String?  @map("placa")
   createdAt         DateTime @default(now()) @map("created_at")
 
   caja          Caja           @relation(fields: [cajaId], references: [id], onDelete: Restrict)
@@ -82,6 +84,8 @@ model Venta {
   @@index([cajaId])
   @@index([cajaId, numeroCorrelativo])
   @@index([fecha])
+  @@index([cliente])
+  @@index([placa])
   @@map("ventas")
 }
 

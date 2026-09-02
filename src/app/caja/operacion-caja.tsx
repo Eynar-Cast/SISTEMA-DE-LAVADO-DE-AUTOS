@@ -463,54 +463,60 @@ function CerrarCajaForm({
   )
 }
 
-function RegistrarVentaForm({
-  servicios,
-  onResultado,
-  setErrorGlobal,
-}: {
-  servicios: ServicioItem[]
-  onResultado: (mensaje: string) => void
-  setErrorGlobal: (m: string) => void
-}) {
-  const [pendiente, startTransition] = useTransition()
-  const [cantidades, setCantidades] = useState<Record<number, number>>({})
-  const [metodoPago, setMetodoPago] = useState('efectivo')
-  const [resultado, setResultado] = useState<string | null>(null)
+ function RegistrarVentaForm({
+   servicios,
+   onResultado,
+   setErrorGlobal,
+ }: {
+   servicios: ServicioItem[]
+   onResultado: (mensaje: string) => void
+   setErrorGlobal: (m: string) => void
+ }) {
+   const [pendiente, startTransition] = useTransition()
+   const [cantidades, setCantidades] = useState<Record<number, number>>({})
+   const [metodoPago, setMetodoPago] = useState('efectivo')
+   const [cliente, setCliente] = useState('')
+   const [placa, setPlaca] = useState('')
+   const [resultado, setResultado] = useState<string | null>(null)
 
-  const total = useMemo(() => {
-    return servicios.reduce(
-      (acc, s) => acc + (cantidades[s.id] || 0) * s.precio,
-      0
-    )
-  }, [cantidades, servicios])
+   const total = useMemo(() => {
+     return servicios.reduce(
+       (acc, s) => acc + (cantidades[s.id] || 0) * s.precio,
+       0
+     )
+   }, [cantidades, servicios])
 
-  const tieneItems = Object.values(cantidades).some((c) => c > 0)
+   const tieneItems = Object.values(cantidades).some((c) => c > 0)
 
-  function registrar(e: React.FormEvent) {
-    e.preventDefault()
-    setResultado(null)
-    setErrorGlobal('')
-    const items = Object.entries(cantidades)
-      .filter(([, c]) => c > 0)
-      .map(([servicioId, cantidad]) => ({
-        servicioId: Number(servicioId),
-        cantidad,
-      }))
+   function registrar(e: React.FormEvent) {
+     e.preventDefault()
+     setResultado(null)
+     setErrorGlobal('')
+     const items = Object.entries(cantidades)
+       .filter(([, c]) => c > 0)
+       .map(([servicioId, cantidad]) => ({
+         servicioId: Number(servicioId),
+         cantidad,
+       }))
 
-    startTransition(async () => {
-      const res = await registrarVenta({
-        servicios: items,
-        metodoPago: metodoPago as 'efectivo' | 'QR' | 'tarjeta' | 'otro',
-      })
-      if (!res.ok) {
-        setErrorGlobal(res.error)
-        return
-      }
-      setCantidades({})
-      setResultado(`Correlativo #${res.numeroCorrelativo} generado.`)
-      onResultado(`Venta registrada · correlativo #${res.numeroCorrelativo}`)
-    })
-  }
+     startTransition(async () => {
+       const res = await registrarVenta({
+         servicios: items,
+         metodoPago: metodoPago as 'efectivo' | 'QR' | 'tarjeta' | 'otro',
+         cliente: cliente.trim() || undefined,
+         placa: placa.trim() || undefined,
+       })
+       if (!res.ok) {
+         setErrorGlobal(res.error)
+         return
+       }
+       setCantidades({})
+       setCliente('')
+       setPlaca('')
+       setResultado(`Correlativo #${res.numeroCorrelativo} generado.`)
+       onResultado(`Venta registrada · correlativo #${res.numeroCorrelativo}`)
+     })
+   }
 
   return (
     <form onSubmit={registrar} className={`${cardCls} p-5`}>
@@ -580,34 +586,59 @@ function RegistrarVentaForm({
         ))}
       </div>
 
-      <div className="mt-5 flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-700/30 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
-            Método de pago
-          </label>
-          <select
-            value={metodoPago}
-            onChange={(e) => setMetodoPago(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-sky-400"
+        <div className="mt-5 flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-700/30 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+              Método de pago
+            </label>
+            <select
+              value={metodoPago}
+              onChange={(e) => setMetodoPago(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-sky-400"
+            >
+              <option value="efectivo">Efectivo</option>
+              <option value="QR">QR</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+              Cliente <span className="text-slate-400">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={cliente}
+              onChange={(e) => setCliente(e.target.value)}
+              placeholder="Nombre del cliente"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-sky-400"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+              Placa <span className="text-slate-400">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={placa}
+              onChange={(e) => setPlaca(e.target.value)}
+              placeholder="ABC-123"
+              maxLength={20}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-sky-400"
+            />
+          </div>
+          <div className="text-left sm:text-right">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Total</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatearMoneda(total)}</p>
+          </div>
+          <button
+            type="submit"
+            disabled={pendiente || !tieneItems || !total}
+            className={`${btnPrimarioCls} w-full px-6 py-2.5 sm:w-auto`}
           >
-            <option value="efectivo">Efectivo</option>
-            <option value="QR">QR</option>
-            <option value="tarjeta">Tarjeta</option>
-            <option value="otro">Otro</option>
-          </select>
+            {pendiente ? 'Registrando...' : 'Registrar venta'}
+          </button>
         </div>
-        <div className="text-left sm:text-right">
-          <p className="text-sm text-slate-500 dark:text-slate-400">Total</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatearMoneda(total)}</p>
-        </div>
-        <button
-          type="submit"
-          disabled={pendiente || !tieneItems || !total}
-          className={`${btnPrimarioCls} w-full px-6 py-2.5 sm:w-auto`}
-        >
-          {pendiente ? 'Registrando...' : 'Registrar venta'}
-        </button>
-      </div>
-    </form>
-  )
+     </form>
+   )
 }

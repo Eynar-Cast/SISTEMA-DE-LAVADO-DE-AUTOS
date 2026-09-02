@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requerirCaja } from '@/lib/session'
+import { requerirCaja, obtenerIp } from '@/lib/session'
 import { manejarError, ErrorDeNegocio } from '@/lib/errores'
 import { Prisma } from '@prisma/client'
 
@@ -23,6 +23,8 @@ const schemaVenta = z.object({
     .min(1, 'Debe seleccionar al menos un servicio')
     .max(50, 'No puede registrar más de 50 servicios por venta'),
   metodoPago: z.enum(['efectivo', 'QR', 'tarjeta', 'otro']),
+  cliente: z.string().trim().max(100).optional(),
+  placa: z.string().trim().max(20).optional(),
 })
 
 const schemaEstado = z.object({
@@ -37,10 +39,13 @@ export type VentaResult =
 export async function registrarVenta(input: {
   servicios: { servicioId: number; cantidad: number }[]
   metodoPago: 'efectivo' | 'QR' | 'tarjeta' | 'otro'
+  cliente?: string
+  placa?: string
 }): Promise<VentaResult> {
   try {
     const usuario = await requerirCaja()
-    const datos = schemaVenta.parse(input)
+    const { servicios: itemsServicio, metodoPago, cliente, placa } = schemaVenta.parse(input)
+    const ip = await obtenerIp()
 
     const caja = await prisma.caja.findFirst({
       where: { usuarioId: usuario.id, estado: 'abierta' },
@@ -49,14 +54,14 @@ export async function registrarVenta(input: {
       return { ok: false, error: 'Debe abrir la caja antes de registrar ventas' }
     }
 
-    const servicioIds = datos.servicios.map((s) => s.servicioId)
-    const servicios = await prisma.servicio.findMany({
+    const servicioIds = itemsServicio.map((s) => s.servicioId)
+    const serviciosDb = await prisma.servicio.findMany({
       where: { id: { in: servicioIds }, estado: 'activo' },
     })
-    const precioPorId = new Map(servicios.map((s) => [s.id, s.precio.toNumber()]))
+    const precioPorId = new Map(serviciosDb.map((s) => [s.id, s.precio.toNumber()]))
 
     let total = 0
-    for (const item of datos.servicios) {
+    for (const item of itemsServicio) {
       const precio = precioPorId.get(item.servicioId)
       if (precio === undefined) {
         return { ok: false, error: 'Uno de los servicios no existe o está inactivo' }
@@ -66,7 +71,6 @@ export async function registrarVenta(input: {
 
     const resultado = await prisma.$transaction(
       async (tx) => {
-        // Lock de fila sobre la caja para serializar la generación del correlativo
         const rows = await tx.$queryRaw<{ id: number; estado: string }[]>`
           SELECT id, estado FROM "cajas" WHERE id = ${caja.id} FOR UPDATE
         `
@@ -88,13 +92,15 @@ export async function registrarVenta(input: {
             cajaId: caja.id,
             numeroCorrelativo,
             usuarioId: usuario.id,
-            metodoPago: datos.metodoPago,
+            metodoPago,
             total,
             estadoVehiculo: 'registrado',
+            cliente,
+            placa,
           },
         })
 
-        const detalleData: Prisma.DetalleVentaCreateManyInput[] = datos.servicios.map(
+        const detalleData: Prisma.DetalleVentaCreateManyInput[] = itemsServicio.map(
           (item) => ({
             ventaId: venta.id,
             servicioId: item.servicioId,
@@ -103,6 +109,23 @@ export async function registrarVenta(input: {
           })
         )
         await tx.detalleVenta.createMany({ data: detalleData })
+
+        await tx.auditoria.create({
+          data: {
+            usuarioId: usuario.id,
+            accion: 'registrar_venta',
+            tablaAfectada: 'ventas',
+            valoresAnteriores: undefined,
+            valoresNuevos: {
+              ventaId: venta.id,
+              numeroCorrelativo,
+              cajaId: caja.id,
+              total,
+              metodoPago,
+            },
+            ip,
+          },
+        })
 
         return { ventaId: venta.id, numeroCorrelativo }
       },
@@ -153,7 +176,6 @@ export async function cambiarEstadoVenta(
     }
 
     await prisma.$transaction(async (tx) => {
-      // Lock de caja y re-chequeo: evita avanzar el estado tras un cierre concurrente
       const rows = await tx.$queryRaw<{ id: number; estado: string }[]>`
         SELECT id, estado FROM "cajas" WHERE id = ${venta.caja.id} FOR UPDATE
       `

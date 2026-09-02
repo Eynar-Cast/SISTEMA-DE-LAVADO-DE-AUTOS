@@ -57,6 +57,8 @@ export type VentaConDetalles = {
   estadoVehiculo: string
   metodoPago: string
   total: number
+  cliente: string | null
+  placa: string | null
   createdAt: Date
   caja: { estado: string }
   usuario: { nombre: string }
@@ -72,11 +74,15 @@ export async function listarVentas({
   cajaId,
   fechaDesde,
   fechaHasta,
+  cliente,
+  placa,
   orden = 'fecha_desc',
 }: {
   cajaId?: number
   fechaDesde?: Date
   fechaHasta?: Date
+  cliente?: string
+  placa?: string
   orden?: OrdenVentas
 } = {}): Promise<VentaConDetalles[]> {
   const orderBy: Record<OrdenVentas, Prisma.VentaOrderByWithRelationInput> = {
@@ -97,6 +103,8 @@ export async function listarVentas({
             },
           }
         : {}),
+      ...(cliente && cliente.trim() ? { cliente: { contains: cliente, mode: 'insensitive' } } : {}),
+      ...(placa && placa.trim() ? { placa: { contains: placa, mode: 'insensitive' } } : {}),
     },
     include: {
       caja: { select: { estado: true } },
@@ -112,6 +120,8 @@ export async function listarVentas({
   return ventas.map((v) => ({
     ...v,
     total: v.total.toNumber(),
+    cliente: v.cliente,
+    placa: v.placa,
     detalleVentas: v.detalleVentas.map((d) => ({
       ...d,
       precioAplicado: d.precioAplicado.toNumber(),
